@@ -1,3 +1,6 @@
+[workspace]
+members = [".", "examplebin"]
+
 [package]
 name = "jsonnet-config"
 version = "0.0.0"
