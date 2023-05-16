@@ -1,11 +1,10 @@
 use clap::Parser;
-use jrsonnet_evaluator::{
-    apply_tla, error::Result as JrResult, gc::GcHashMap, trace::PathResolver, FileImportResolver,
-    State,
-};
-use jrsonnet_parser::IStr;
-use jrsonnet_stdlib::{ContextInitializer, YamlFormat};
+use jrsonnet_evaluator::{manifest::JsonFormat, trace::PathResolver, FileImportResolver, State};
+use jrsonnet_stdlib::ContextInitializer;
+use std::error::Error;
+use std::fs::File;
 use std::path::{Path, PathBuf};
+use valico::json_schema::{self, ValidationState};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -17,18 +16,25 @@ struct Opts {
     schema: Option<PathBuf>,
 }
 
-pub fn main() -> JrResult<()> {
+pub fn main() -> Result<(), Box<dyn Error + 'static>> {
     let opts = Opts::parse();
 
-    let yaml = eval(opts.config)?;
+    let json = evaluate(opts.config)?;
 
-    println!("{yaml}");
+    if let Some(schema) = opts.schema {
+        let state = validate(schema, &json)?;
+        if !state.is_strictly_valid() {
+            eprintln!("Errors: {:?}", state.errors);
+        }
+    }
+
+    println!("{json}");
 
     Ok(())
 }
 
-pub fn eval<P: AsRef<Path>>(path: P) -> JrResult<String> {
-    let manifest_format = Box::new(YamlFormat::cli(2, true));
+fn evaluate<P: AsRef<Path>>(path: P) -> Result<String, Box<dyn Error + 'static>> {
+    let manifest_format = Box::new(JsonFormat::cli(2, true));
     let state = State::default();
     state.set_import_resolver(FileImportResolver::default());
 
@@ -41,5 +47,20 @@ pub fn eval<P: AsRef<Path>>(path: P) -> JrResult<String> {
 
     let val = state.import(path)?;
     // let val = apply_tla(state.clone(), &tla, val)?;
-    val.manifest(manifest_format)
+    let output = val.manifest(manifest_format)?;
+
+    Ok(output)
+}
+
+fn validate<P: AsRef<Path>>(
+    schema: P,
+    config: &str,
+) -> Result<ValidationState, Box<dyn Error + 'static>> {
+    let schema = serde_json::from_reader(File::open(schema)?)?;
+    let mut scope = json_schema::Scope::new();
+    let schema = scope.compile_and_return(schema, true)?;
+
+    let config: serde_json::Value = serde_json::from_str(config)?;
+
+    Ok(schema.validate(&config))
 }
