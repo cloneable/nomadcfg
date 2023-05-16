@@ -5,6 +5,7 @@ edition = "2021"
 authors = ["Folke B."]
 
 [dependencies]
+clap = { version = "4.2.7", features = ["derive"] }
 jrsonnet-evaluator = { git = "https://github.com/CertainLach/jrsonnet", tag = "v0.5.0-pre9-test", default-features = false, features = ["exp-preserve-order"] }
 jrsonnet-parser = { git = "https://github.com/CertainLach/jrsonnet", tag = "v0.5.0-pre9-test", default-features = false }
 jrsonnet-stdlib = { git = "https://github.com/CertainLach/jrsonnet", tag = "v0.5.0-pre9-test", default-features = false, features = ["exp-preserve-order"] }
