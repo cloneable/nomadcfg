@@ -1154,7 +1154,6 @@ version = "0.0.0"
 dependencies = [
  "jrsonnet-evaluator",
  "jrsonnet-parser",
- "jrsonnet-stdlib",
  "serde",
 ]
 
