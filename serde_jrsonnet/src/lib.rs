@@ -301,7 +301,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        match self.val {
+            Val::Arr(v) => visitor.visit_seq(ArraySeq { val: v, idx: 0 }),
+            _ => Err(Error::ExpectedArr(self.val.clone())),
+        }
     }
 
     fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value>
@@ -400,8 +403,8 @@ impl<'a, 'de> de::MapAccess<'de> for ObjValueMap<'a, 'de> {
         }
         let key = self.fields[self.field_idx];
         match self.val.field_visibility(key.into()) {
-            Some(Visibility::Hidden) => return Err(Error::FieldNotVisible),
-            None => return Err(Error::FieldNotFound),
+            Some(Visibility::Hidden) => return Err(Error::FieldNotVisible(key.to_owned())),
+            None => return Err(Error::FieldNotFound(key.to_owned())),
             _ => {}
         }
         seed.deserialize(StrDeserializer::new(key)).map(Some)
@@ -421,7 +424,38 @@ impl<'a, 'de> de::MapAccess<'de> for ObjValueMap<'a, 'de> {
                 };
                 seed.deserialize(&mut d)
             }
-            None => Err(Error::FieldNotFound),
+            None => Err(Error::FieldNotFound(key.to_owned())),
+        }
+    }
+}
+
+struct ArraySeq<'a> {
+    val: &'a ArrValue,
+    idx: usize,
+}
+
+impl<'a, 'de: 'a> de::SeqAccess<'de> for ArraySeq<'a> {
+    type Error = Error;
+
+    fn next_element_seed<T>(
+        &mut self,
+        seed: T,
+    ) -> std::result::Result<Option<T::Value>, Self::Error>
+    where
+        T: de::DeserializeSeed<'de>,
+    {
+        if self.idx == self.val.len() {
+            return Ok(None);
+        }
+        match self.val.get(self.idx)? {
+            Some(val) => {
+                let mut d = Deserializer {
+                    val: &val,
+                    marker: PhantomData::default(),
+                };
+                seed.deserialize(&mut d).map(Some)
+            }
+            None => Err(Error::FieldNotFound("".to_owned())),
         }
     }
 }

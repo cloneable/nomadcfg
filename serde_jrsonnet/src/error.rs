@@ -10,8 +10,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 // processed.
 #[derive(Debug)]
 pub enum Error {
-    FieldNotVisible,
-    FieldNotFound,
+    FieldNotVisible(String),
+    FieldNotFound(String),
 
     ExpectedBool(Val),
     ExpectedNull(Val),
