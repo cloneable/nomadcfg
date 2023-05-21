@@ -785,6 +785,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "nomadcfg"
+version = "0.0.0"
+dependencies = [
+ "clap",
+ "jrsonnet-evaluator",
+ "jrsonnet-parser",
+ "jrsonnet-stdlib",
+ "nomadapi",
+ "serde_jrsonnet",
+ "serde_json",
+ "serde_yaml",
+]
+
+[[package]]
 name = "num-integer"
 version = "0.1.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
