@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 
 use error::{Error, Result};
 use jrsonnet_evaluator::{val::ArrValue, ObjValue, Val};
-use jrsonnet_parser::Visibility;
+use jrsonnet_parser::{IStr, Visibility};
 use serde::{
     de::{self, value::StrDeserializer},
     Deserialize,
@@ -39,7 +39,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        match self.val {
+            Val::Str(v) => visitor.visit_string(v.to_string()),
+            _ => todo!("{:?}", self.val),
+        }
     }
 
     fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value>
@@ -330,11 +333,14 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     where
         V: de::Visitor<'de>,
     {
-        todo!()
-        // match self.val {
-        //     Val::Obj(v) => visitor.visit_map(ObjValueMap(self, v)),
-        //     _ => Err(Error::ExpectedMap),
-        // }
+        match self.val {
+            Val::Obj(v) => visitor.visit_map(MapValueMap {
+                fields: v.fields(true),
+                field_idx: 0,
+                val: &v,
+            }),
+            _ => Err(Error::ExpectedObj(self.val.clone())),
+        }
     }
 
     fn deserialize_struct<V>(
@@ -449,6 +455,7 @@ impl<'a, 'de: 'a> de::SeqAccess<'de> for ArraySeq<'a> {
         }
         match self.val.get(self.idx)? {
             Some(val) => {
+                self.idx += 1;
                 let mut d = Deserializer {
                     val: &val,
                     marker: PhantomData::default(),
@@ -456,6 +463,52 @@ impl<'a, 'de: 'a> de::SeqAccess<'de> for ArraySeq<'a> {
                 seed.deserialize(&mut d).map(Some)
             }
             None => Err(Error::FieldNotFound("".to_owned())),
+        }
+    }
+}
+
+struct MapValueMap<'a> {
+    fields: Vec<IStr>,
+    field_idx: usize,
+    val: &'a ObjValue,
+}
+
+impl<'a, 'de: 'a> de::MapAccess<'de> for MapValueMap<'a> {
+    type Error = Error;
+
+    fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>>
+    where
+        K: de::DeserializeSeed<'de>,
+    {
+        if self.field_idx == self.fields.len() {
+            return Ok(None);
+        }
+
+        let key = &self.fields[self.field_idx];
+        match self.val.field_visibility(key.clone()) {
+            Some(Visibility::Hidden) => return Err(Error::FieldNotVisible(key.to_string())),
+            None => return Err(Error::FieldNotFound(key.to_string())),
+            _ => {}
+        }
+        seed.deserialize(StrDeserializer::new(key.as_str()))
+            .map(Some)
+    }
+
+    fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value>
+    where
+        V: de::DeserializeSeed<'de>,
+    {
+        let key = &self.fields[self.field_idx];
+        self.field_idx += 1;
+        match self.val.get(key.clone())? {
+            Some(f) => {
+                let mut d = Deserializer {
+                    val: &f,
+                    marker: PhantomData::default(),
+                };
+                seed.deserialize(&mut d)
+            }
+            None => Err(Error::FieldNotFound(key.to_string())),
         }
     }
 }
