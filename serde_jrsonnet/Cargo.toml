@@ -1,0 +1,12 @@
+[package]
+name = "serde_jrsonnet"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+jrsonnet-evaluator = { git = "https://github.com/CertainLach/jrsonnet", tag = "v0.5.0-pre9-test", default-features = false, features = ["exp-preserve-order"] }
+jrsonnet-parser = { git = "https://github.com/CertainLach/jrsonnet", tag = "v0.5.0-pre9-test", default-features = false }
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+jrsonnet-stdlib = { git = "https://github.com/CertainLach/jrsonnet", tag = "v0.5.0-pre9-test", default-features = false, features = ["exp-preserve-order"] }
