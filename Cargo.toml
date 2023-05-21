@@ -1,5 +1,5 @@
 [workspace]
-members = ["jscfg", "examplebin"]
+members = ["jscfg", "examplebin", "nomadapi", "serde_jrsonnet"]
 
 [profile.release]
 opt-level = 3
