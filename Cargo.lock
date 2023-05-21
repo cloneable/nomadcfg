@@ -793,6 +793,7 @@ dependencies = [
  "jrsonnet-parser",
  "jrsonnet-stdlib",
  "nomadapi",
+ "serde",
  "serde_jrsonnet",
  "serde_json",
  "serde_yaml",
