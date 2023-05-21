@@ -1,7 +1,5 @@
 mod error;
 
-use std::marker::PhantomData;
-
 use error::{Error, Result};
 use jrsonnet_evaluator::{val::ArrValue, ObjValue, Val};
 use jrsonnet_parser::{IStr, Visibility};
@@ -9,6 +7,7 @@ use serde::{
     de::{self, value::StrDeserializer},
     Deserialize,
 };
+use std::marker::PhantomData;
 
 pub struct Deserializer<'a, 'de: 'a> {
     pub val: &'a Val,
@@ -266,7 +265,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        self.deserialize_bytes(visitor)
     }
 
     fn deserialize_option<V>(self, visitor: V) -> Result<V::Value>
@@ -279,21 +278,21 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
         }
     }
 
-    fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_unit<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
         todo!()
     }
 
-    fn deserialize_unit_struct<V>(self, name: &'static str, visitor: V) -> Result<V::Value>
+    fn deserialize_unit_struct<V>(self, _name: &'static str, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
         todo!()
     }
 
-    fn deserialize_newtype_struct<V>(self, name: &'static str, visitor: V) -> Result<V::Value>
+    fn deserialize_newtype_struct<V>(self, _name: &'static str, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
@@ -310,7 +309,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
         }
     }
 
-    fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value>
+    fn deserialize_tuple<V>(self, _len: usize, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
@@ -319,9 +318,9 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
 
     fn deserialize_tuple_struct<V>(
         self,
-        name: &'static str,
-        len: usize,
-        visitor: V,
+        _name: &'static str,
+        _len: usize,
+        _visitor: V,
     ) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
@@ -365,9 +364,9 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
 
     fn deserialize_enum<V>(
         self,
-        name: &'static str,
-        variants: &'static [&'static str],
-        visitor: V,
+        _name: &'static str,
+        _variants: &'static [&'static str],
+        _visitor: V,
     ) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
@@ -375,14 +374,14 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
         todo!()
     }
 
-    fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_identifier<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
         todo!()
     }
 
-    fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_ignored_any<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
