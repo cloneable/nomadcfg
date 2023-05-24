@@ -21,6 +21,9 @@ pub enum Error {
     ExpectedObj(Val),
     ExpectedFunc(Val),
 
+    IdentifierExpected,
+    UnexpectedVal(Val),
+
     // One or more variants that can be created by data structures through the
     // `ser::Error` and `de::Error` traits. For example the Serialize impl for
     // Mutex<T> might return an error because the mutex is poisoned, or the

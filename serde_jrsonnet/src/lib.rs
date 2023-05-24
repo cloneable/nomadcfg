@@ -39,8 +39,17 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
         V: de::Visitor<'de>,
     {
         match self.val {
+            Val::Bool(v) => visitor.visit_bool(*v),
+            Val::Null => visitor.visit_none(),
+            Val::Num(v) => visitor.visit_f64(*v),
+            Val::Func(_) => Err(Error::UnexpectedVal(self.val.clone())),
             Val::Str(v) => visitor.visit_string(v.to_string()),
-            _ => todo!("{:?}", self.val),
+            Val::Obj(v) => visitor.visit_map(MapValueMap {
+                fields: v.fields(true),
+                field_idx: 0,
+                val: &v,
+            }),
+            Val::Arr(v) => visitor.visit_seq(ArraySeq { val: v, idx: 0 }),
         }
     }
 
@@ -278,25 +287,34 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
         }
     }
 
-    fn deserialize_unit<V>(self, _visitor: V) -> Result<V::Value>
+    fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        match self.val {
+            Val::Obj(v) if v.len() == 0 => visitor.visit_unit(),
+            _ => Err(Error::ExpectedArr(self.val.clone())),
+        }
     }
 
-    fn deserialize_unit_struct<V>(self, _name: &'static str, _visitor: V) -> Result<V::Value>
+    fn deserialize_unit_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        match self.val {
+            Val::Obj(v) if v.len() == 0 => visitor.visit_unit(),
+            _ => Err(Error::ExpectedArr(self.val.clone())),
+        }
     }
 
-    fn deserialize_newtype_struct<V>(self, _name: &'static str, _visitor: V) -> Result<V::Value>
+    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        match self.val {
+            Val::Arr(v) if v.len() == 1 => visitor.visit_seq(ArraySeq { val: v, idx: 0 }),
+            _ => Err(Error::ExpectedArr(self.val.clone())),
+        }
     }
 
     fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value>
@@ -309,23 +327,29 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
         }
     }
 
-    fn deserialize_tuple<V>(self, _len: usize, _visitor: V) -> Result<V::Value>
+    fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        match self.val {
+            Val::Arr(v) if v.len() == len => visitor.visit_seq(ArraySeq { val: v, idx: 0 }),
+            _ => Err(Error::ExpectedArr(self.val.clone())),
+        }
     }
 
     fn deserialize_tuple_struct<V>(
         self,
         _name: &'static str,
-        _len: usize,
-        _visitor: V,
+        len: usize,
+        visitor: V,
     ) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        match self.val {
+            Val::Arr(v) if v.len() == len => visitor.visit_seq(ArraySeq { val: v, idx: 0 }),
+            _ => Err(Error::ExpectedArr(self.val.clone())),
+        }
     }
 
     fn deserialize_map<V>(self, visitor: V) -> Result<V::Value>
@@ -378,14 +402,14 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        Err(Error::IdentifierExpected)
     }
 
-    fn deserialize_ignored_any<V>(self, _visitor: V) -> Result<V::Value>
+    fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        visitor.visit_unit()
     }
 }
 
