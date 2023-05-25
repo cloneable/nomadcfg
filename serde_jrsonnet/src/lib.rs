@@ -452,17 +452,22 @@ impl<'a, 'de: 'a> de::MapAccess<'de> for ObjValueMap<'a> {
     where
         K: de::DeserializeSeed<'de>,
     {
-        if self.field_idx == self.fields.len() {
-            return Ok(None);
-        }
-        let key = self.fields[self.field_idx];
-        match self.val.field_visibility(key.into()) {
-            Some(Visibility::Hidden) => {
-                return Err(Error::FieldNotVisible(self.path.entries(), key.to_owned()))
+        let key = loop {
+            if self.field_idx == self.fields.len() {
+                return Ok(None);
             }
-            None => return Err(Error::FieldNotFound(self.path.entries(), key.to_owned())),
-            _ => {}
-        }
+            let key = self.fields[self.field_idx];
+            match self.val.field_visibility(key.into()) {
+                Some(Visibility::Hidden) => {
+                    return Err(Error::FieldNotVisible(self.path.entries(), key.to_owned()))
+                }
+                None => {
+                    self.field_idx += 1;
+                    continue;
+                }
+                _ => break key,
+            }
+        };
         seed.deserialize(StrDeserializer::new(key)).map(Some)
     }
 
