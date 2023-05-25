@@ -1,31 +1,36 @@
 local nomad = import 'nomad.libsonnet';
 
+local service_config = {
+  log: {
+    level: 'INFO',
+  },
+  redis: {
+    password: '{{ secret "redis/prod/password" }}',
+  },
+};
+
 {
-  Job: nomad.Service {
+  Job: nomad.Job('cacheserver') {
+    Type: 'service',
     Name: 'cacheserver',
+    Namespace: 'backend',
+
     Region: 'eu',
     Datacenters: ['dc1'],
+
     TaskGroups: [
-      nomad.TaskGroup {
-        Name: 'prod',
+      nomad.TaskGroup('prod') {
         Tasks: [
-          nomad.Task {
-            Name: 'redis',
+          nomad.Task('redis') {
             Driver: 'docker',
             Config: {
               image: 'redis:' + std.extVar('imagetag'),
             },
+
             Templates: [
-              nomad.Template {
-                DestPath: '/etc/config.yaml',
-                EmbeddedTmpl: nomad.YamlTmpl({
-                  log: {
-                    level: 'INFO',
-                  },
-                  redis: {
-                    password: '{{ secret "redis/prod/password" }}',
-                  },
-                }),
+              nomad.Template('/etc/config.yaml') {
+                ChangeMode: 'noop',
+                EmbeddedTmpl: nomad.YamlTmpl(service_config),
               },
             ],
           },

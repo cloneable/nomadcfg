@@ -1,17 +1,17 @@
 {
-  Job: {
+  Job(id):: {
     Affinities: [],
     AllAtOnce: null,
-    Constraints: [],
+    Constraints+: [],
     ConsulNamespace: null,
     ConsulToken: null,
     CreateIndex: null,
-    Datacenters: [],
+    Datacenters+: [],
     DispatchIdempotencyToken: null,
     Dispatched: null,
-    ID: null,
+    ID: id,
     JobModifyIndex: null,
-    Meta: {},
+    Meta+: {},
     Migrate: null,
     ModifyIndex: null,
     Multiregion: null,
@@ -25,13 +25,13 @@
     Priority: null,
     Region: null,
     Reschedule: null,
-    Spreads: [],
+    Spreads+: [],
     Stable: null,
     Status: null,
     StatusDescription: null,
     Stop: null,
     SubmitTime: null,
-    TaskGroups: [],
+    TaskGroups+: [],
     Type: null,
     Update: null,
     VaultNamespace: null,
@@ -39,34 +39,30 @@
     Version: null,
   },
 
-  Service: self.Job {
-    Type: 'service',
-  },
-
-  TaskGroup: {
-    Affinities: [],
-    Constraints: [],
+  TaskGroup(name):: {
+    Affinities+: [],
+    Constraints+: [],
     Consul: null,
     Count: null,
     EphemeralDisk: null,
     MaxClientDisconnect: null,
-    Meta: {},
+    Meta+: {},
     Migrate: null,
-    Name: null,
-    Networks: [],
+    Name: name,
+    Networks+: [],
     ReschedulePolicy: null,
     RestartPolicy: null,
     Scaling: null,
-    Services: [],
+    Services+: [],
     ShutdownDelay: null,
-    Spreads: [],
+    Spreads+: [],
     StopAfterClientDisconnect: null,
-    Tasks: [],
+    Tasks+: [],
     Update: null,
-    Volumes: {},
+    Volumes+: {},
   },
 
-  Task: {
+  Task(name):: {
     Affinities: [],
     Artifacts: [],
     Config: {},
@@ -82,7 +78,7 @@
     Lifecycle: null,
     LogConfig: null,
     Meta: {},
-    Name: null,
+    Name: name,
     Resources: null,
     RestartPolicy: null,
     ScalingPolicies: [],
@@ -94,11 +90,11 @@
     VolumeMounts: [],
   },
 
-  Template: {
+  Template(destpath):: {
     ChangeMode: null,
     ChangeScript: null,
     ChangeSignal: null,
-    DestPath: null,
+    DestPath: destpath,
     EmbeddedTmpl: null,
     Envvars: null,
     Gid: null,
@@ -112,8 +108,12 @@
     Wait: null,
   },
 
-  YamlTmpl(data): std.manifestYamlDoc(data,
-                                      indent_array_in_object=true,
-                                      quote_keys=false,
-                                      preserve_order=true),
+  Service:: {
+
+  },
+
+  YamlTmpl(data):: std.manifestYamlDoc(data,
+                                       indent_array_in_object=true,
+                                       quote_keys=false,
+                                       preserve_order=true),
 }
