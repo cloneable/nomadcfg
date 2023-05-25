@@ -1,0 +1,32 @@
+[advisories]
+vulnerability = "deny"
+unmaintained = "deny"
+yanked = "deny"
+notice = "deny"
+ignore = [
+    #"RUSTSEC-0000-0000",
+]
+
+[licenses]
+unlicensed = "deny"
+allow = [
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "MIT",
+]
+copyleft = "deny"
+allow-osi-fsf-free = "neither"
+default = "deny"
+confidence-threshold = 0.9
+exceptions = [
+    { allow = ["MPL-2.0"], name = "progenitor-client", version = "*" },
+    { allow = ["Unicode-DFS-2016"], name = "unicode-ident", version = "*" },
+]
+
+[licenses.private]
+ignore = false
+
+[sources]
+allow-git = [
+    "https://github.com/CertainLach/jrsonnet"
+]
