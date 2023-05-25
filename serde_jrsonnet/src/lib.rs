@@ -8,33 +8,32 @@ use serde::{
     de::{self, value::StrDeserializer},
     Deserialize,
 };
-use std::marker::PhantomData;
 
-pub struct Deserializer<'a, 'de: 'a> {
+pub struct Deserializer<'a> {
     path: RcValPath,
     pub val: &'a Val,
-    marker: PhantomData<&'de ()>,
+    error_on_unknown_field: bool,
 }
 
-impl<'a, 'de> Deserializer<'a, 'de> {
-    pub fn from_val(val: &'de Val) -> Self {
+impl<'a> Deserializer<'a> {
+    pub fn from_val(val: &'a Val, error_on_unknown_field: bool) -> Self {
         Deserializer {
             path: Default::default(),
             val,
-            marker: PhantomData::default(),
+            error_on_unknown_field,
         }
     }
 }
 
-pub fn from_val<'de, T>(val: &'de Val) -> Result<T>
+pub fn from_val<'a, 'de: 'a, T>(val: &'a Val, error_on_unknown_field: bool) -> Result<T>
 where
     T: Deserialize<'de>,
 {
-    let mut deserializer = Deserializer::from_val(val);
+    let mut deserializer = Deserializer::from_val(val, error_on_unknown_field);
     T::deserialize(&mut deserializer)
 }
 
-impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
+impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
     type Error = Error;
 
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value>
@@ -52,11 +51,13 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
                 fields: v.fields(true),
                 field_idx: 0,
                 val: &v,
+                error_on_unknown_field: self.error_on_unknown_field,
             }),
             Val::Arr(v) => visitor.visit_seq(ArraySeq {
                 path: self.path.clone(),
                 val: v,
                 idx: 0,
+                error_on_unknown_field: self.error_on_unknown_field,
             }),
         }
     }
@@ -324,6 +325,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
                 path: self.path.clone(),
                 val: v,
                 idx: 0,
+                error_on_unknown_field: self.error_on_unknown_field,
             }),
             _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
         }
@@ -338,6 +340,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
                 path: self.path.clone(),
                 val: v,
                 idx: 0,
+                error_on_unknown_field: self.error_on_unknown_field,
             }),
             _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
         }
@@ -352,6 +355,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
                 path: self.path.clone(),
                 val: v,
                 idx: 0,
+                error_on_unknown_field: self.error_on_unknown_field,
             }),
             _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
         }
@@ -371,6 +375,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
                 path: self.path.clone(),
                 val: v,
                 idx: 0,
+                error_on_unknown_field: self.error_on_unknown_field,
             }),
             _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
         }
@@ -386,6 +391,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
                 fields: v.fields(true),
                 field_idx: 0,
                 val: &v,
+                error_on_unknown_field: self.error_on_unknown_field,
             }),
             _ => Err(Error::ExpectedObj(self.path.entries(), self.val.clone())),
         }
@@ -406,6 +412,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
                 fields,
                 field_idx: 0,
                 val: v,
+                error_on_unknown_field: self.error_on_unknown_field,
             }),
             _ => Err(Error::ExpectedObj(self.path.entries(), self.val.clone())),
         }
@@ -443,6 +450,7 @@ struct ObjValueMap<'a> {
     fields: &'static [&'static str],
     field_idx: usize,
     val: &'a ObjValue,
+    error_on_unknown_field: bool,
 }
 
 impl<'a, 'de: 'a> de::MapAccess<'de> for ObjValueMap<'a> {
@@ -462,8 +470,10 @@ impl<'a, 'de: 'a> de::MapAccess<'de> for ObjValueMap<'a> {
                     return Err(Error::FieldNotVisible(self.path.entries(), key.to_owned()))
                 }
                 None => {
+                    if self.error_on_unknown_field {
+                        return Err(Error::FieldNotFound(self.path.entries(), key.to_owned()));
+                    }
                     self.field_idx += 1;
-                    continue;
                 }
                 _ => break key,
             }
@@ -483,7 +493,7 @@ impl<'a, 'de: 'a> de::MapAccess<'de> for ObjValueMap<'a> {
                 let mut d = Deserializer {
                     path: self.path.clone(),
                     val: &f,
-                    marker: Default::default(),
+                    error_on_unknown_field: self.error_on_unknown_field,
                 };
                 seed.deserialize(&mut d)
             }
@@ -496,6 +506,7 @@ struct ArraySeq<'a> {
     path: RcValPath,
     val: &'a ArrValue,
     idx: usize,
+    error_on_unknown_field: bool,
 }
 
 impl<'a, 'de: 'a> de::SeqAccess<'de> for ArraySeq<'a> {
@@ -518,7 +529,7 @@ impl<'a, 'de: 'a> de::SeqAccess<'de> for ArraySeq<'a> {
                 let mut d = Deserializer {
                     path: self.path.clone(),
                     val: &val,
-                    marker: Default::default(),
+                    error_on_unknown_field: self.error_on_unknown_field,
                 };
                 seed.deserialize(&mut d).map(Some)
             }
@@ -532,6 +543,7 @@ struct MapValueMap<'a> {
     fields: Vec<IStr>,
     field_idx: usize,
     val: &'a ObjValue,
+    error_on_unknown_field: bool,
 }
 
 impl<'a, 'de: 'a> de::MapAccess<'de> for MapValueMap<'a> {
@@ -569,7 +581,7 @@ impl<'a, 'de: 'a> de::MapAccess<'de> for MapValueMap<'a> {
                 let mut d = Deserializer {
                     path: self.path.clone(),
                     val: &f,
-                    marker: PhantomData::default(),
+                    error_on_unknown_field: self.error_on_unknown_field,
                 };
                 seed.deserialize(&mut d)
             }

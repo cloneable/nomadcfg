@@ -15,6 +15,9 @@ struct Opts {
 
     #[arg(long, value_enum, rename_all = "lower", default_value_t = Format::Json)]
     format: Format,
+
+    #[arg(long)]
+    error_on_unknown_field: bool,
 }
 
 #[derive(Clone, ValueEnum)]
@@ -46,7 +49,7 @@ pub fn main() -> Result<(), Box<dyn Error + 'static>> {
     let val = state.import(opts.spec)?;
     // let val = apply_tla(state.clone(), &tla, val)?;
 
-    let spec: Jobspec = match serde_jrsonnet::from_val(&val) {
+    let spec: Jobspec = match serde_jrsonnet::from_val(&val, opts.error_on_unknown_field) {
         Ok(spec) => spec,
         Err(err) => {
             eprintln!("Error: {err}");
