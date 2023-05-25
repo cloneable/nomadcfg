@@ -2,8 +2,7 @@ use clap::Parser;
 use jrsonnet_evaluator::{trace::PathResolver, FileImportResolver, State};
 use jrsonnet_stdlib::ContextInitializer;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
-use std::path::PathBuf;
+use std::{error::Error, path::PathBuf, process};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -40,7 +39,13 @@ pub fn main() -> Result<(), Box<dyn Error + 'static>> {
     let val = state.import(opts.spec)?;
     // let val = apply_tla(state.clone(), &tla, val)?;
 
-    let spec: Jobspec = serde_jrsonnet::from_val(&val)?;
+    let spec: Jobspec = match serde_jrsonnet::from_val(&val) {
+        Ok(spec) => spec,
+        Err(err) => {
+            eprintln!("Error: {err}");
+            process::exit(1);
+        }
+    };
 
     let output = if opts.yaml {
         serde_yaml::to_string(&spec)?

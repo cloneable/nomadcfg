@@ -1155,6 +1155,7 @@ dependencies = [
  "jrsonnet-evaluator",
  "jrsonnet-parser",
  "serde",
+ "thiserror",
 ]
 
 [[package]]

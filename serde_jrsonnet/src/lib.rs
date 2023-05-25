@@ -1,6 +1,6 @@
 mod error;
 
-use crate::error::{ValPath, ValPathEntry};
+use crate::error::{RcValPath, ValPathEntry};
 use error::{Error, Result};
 use jrsonnet_evaluator::{val::ArrValue, ObjValue, Val};
 use jrsonnet_parser::{IStr, Visibility};
@@ -11,7 +11,7 @@ use serde::{
 use std::marker::PhantomData;
 
 pub struct Deserializer<'a, 'de: 'a> {
-    path: ValPath,
+    path: RcValPath,
     pub val: &'a Val,
     marker: PhantomData<&'de ()>,
 }
@@ -31,8 +31,6 @@ where
     T: Deserialize<'de>,
 {
     let mut deserializer = Deserializer::from_val(val);
-    // let mut path = deserializer.path.clone();
-    // let _guard = path.push(ValPathEntry::Field("ROOT".to_owned()));
     T::deserialize(&mut deserializer)
 }
 
@@ -429,7 +427,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     where
         V: de::Visitor<'de>,
     {
-        Err(Error::IdentifierExpected)
+        Err(Error::IdentifierExpected(self.path.entries()))
     }
 
     fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value>
@@ -441,7 +439,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
 }
 
 struct ObjValueMap<'a> {
-    path: ValPath,
+    path: RcValPath,
     fields: &'static [&'static str],
     field_idx: usize,
     val: &'a ObjValue,
@@ -490,7 +488,7 @@ impl<'a, 'de: 'a> de::MapAccess<'de> for ObjValueMap<'a> {
 }
 
 struct ArraySeq<'a> {
-    path: ValPath,
+    path: RcValPath,
     val: &'a ArrValue,
     idx: usize,
 }
@@ -508,7 +506,7 @@ impl<'a, 'de: 'a> de::SeqAccess<'de> for ArraySeq<'a> {
         if self.idx == self.val.len() {
             return Ok(None);
         }
-        let _guard = self.path.push(ValPathEntry::ArrayIndex(self.idx));
+        let _guard = self.path.push(ValPathEntry::Index(self.idx));
         match self.val.get(self.idx)? {
             Some(val) => {
                 self.idx += 1;
@@ -525,7 +523,7 @@ impl<'a, 'de: 'a> de::SeqAccess<'de> for ArraySeq<'a> {
 }
 
 struct MapValueMap<'a> {
-    path: ValPath,
+    path: RcValPath,
     fields: Vec<IStr>,
     field_idx: usize,
     val: &'a ObjValue,
