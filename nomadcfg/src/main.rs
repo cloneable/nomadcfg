@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use jrsonnet_evaluator::{trace::PathResolver, FileImportResolver, State};
 use jrsonnet_stdlib::ContextInitializer;
 use serde::{Deserialize, Serialize};
@@ -13,8 +13,15 @@ struct Opts {
     #[arg(long, default_value = "latest", value_name = "TAG")]
     imagetag: String,
 
-    #[arg(long)]
-    yaml: bool,
+    #[arg(long, value_enum, rename_all = "lower", default_value_t = Format::Json)]
+    format: Format,
+}
+
+#[derive(Clone, ValueEnum)]
+enum Format {
+    Json,
+    Yaml,
+    Toml,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -47,10 +54,10 @@ pub fn main() -> Result<(), Box<dyn Error + 'static>> {
         }
     };
 
-    let output = if opts.yaml {
-        serde_yaml::to_string(&spec)?
-    } else {
-        serde_json::to_string_pretty(&spec)?
+    let output = match opts.format {
+        Format::Json => serde_json::to_string_pretty(&spec)?,
+        Format::Yaml => serde_yaml::to_string(&spec)?,
+        Format::Toml => toml::to_string_pretty(&spec)?,
     };
 
     println!("{output}");
