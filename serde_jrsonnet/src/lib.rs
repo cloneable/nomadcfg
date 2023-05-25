@@ -1,5 +1,6 @@
 mod error;
 
+use crate::error::{ValPath, ValPathEntry};
 use error::{Error, Result};
 use jrsonnet_evaluator::{val::ArrValue, ObjValue, Val};
 use jrsonnet_parser::{IStr, Visibility};
@@ -10,6 +11,7 @@ use serde::{
 use std::marker::PhantomData;
 
 pub struct Deserializer<'a, 'de: 'a> {
+    path: ValPath,
     pub val: &'a Val,
     marker: PhantomData<&'de ()>,
 }
@@ -17,6 +19,7 @@ pub struct Deserializer<'a, 'de: 'a> {
 impl<'a, 'de> Deserializer<'a, 'de> {
     pub fn from_val(val: &'de Val) -> Self {
         Deserializer {
+            path: Default::default(),
             val,
             marker: PhantomData::default(),
         }
@@ -28,6 +31,8 @@ where
     T: Deserialize<'de>,
 {
     let mut deserializer = Deserializer::from_val(val);
+    // let mut path = deserializer.path.clone();
+    // let _guard = path.push(ValPathEntry::Field("ROOT".to_owned()));
     T::deserialize(&mut deserializer)
 }
 
@@ -42,14 +47,19 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
             Val::Bool(v) => visitor.visit_bool(*v),
             Val::Null => visitor.visit_none(),
             Val::Num(v) => visitor.visit_f64(*v),
-            Val::Func(_) => Err(Error::UnexpectedVal(self.val.clone())),
+            Val::Func(_) => Err(Error::UnexpectedVal(self.path.entries(), self.val.clone())),
             Val::Str(v) => visitor.visit_string(v.to_string()),
             Val::Obj(v) => visitor.visit_map(MapValueMap {
+                path: self.path.clone(),
                 fields: v.fields(true),
                 field_idx: 0,
                 val: &v,
             }),
-            Val::Arr(v) => visitor.visit_seq(ArraySeq { val: v, idx: 0 }),
+            Val::Arr(v) => visitor.visit_seq(ArraySeq {
+                path: self.path.clone(),
+                val: v,
+                idx: 0,
+            }),
         }
     }
 
@@ -59,7 +69,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     {
         match self.val {
             Val::Bool(v) => visitor.visit_bool(*v),
-            _ => Err(Error::ExpectedBool(self.val.clone())),
+            _ => Err(Error::ExpectedBool(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -77,7 +87,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
                 let x = unsafe { v.to_int_unchecked::<i8>() };
                 visitor.visit_i8(x)
             }
-            _ => Err(Error::ExpectedNum(self.val.clone())),
+            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -95,7 +105,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
                 let x = unsafe { v.to_int_unchecked::<i16>() };
                 visitor.visit_i16(x)
             }
-            _ => Err(Error::ExpectedNum(self.val.clone())),
+            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -113,7 +123,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
                 let x = unsafe { v.to_int_unchecked::<i32>() };
                 visitor.visit_i32(x)
             }
-            _ => Err(Error::ExpectedNum(self.val.clone())),
+            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -131,7 +141,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
                 let x = unsafe { v.to_int_unchecked::<i64>() };
                 visitor.visit_i64(x)
             }
-            _ => Err(Error::ExpectedNum(self.val.clone())),
+            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -149,7 +159,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
                 let x = unsafe { v.to_int_unchecked::<u8>() };
                 visitor.visit_u8(x)
             }
-            _ => Err(Error::ExpectedNum(self.val.clone())),
+            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -167,7 +177,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
                 let x = unsafe { v.to_int_unchecked::<u16>() };
                 visitor.visit_u16(x)
             }
-            _ => Err(Error::ExpectedNum(self.val.clone())),
+            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -185,7 +195,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
                 let x = unsafe { v.to_int_unchecked::<u32>() };
                 visitor.visit_u32(x)
             }
-            _ => Err(Error::ExpectedNum(self.val.clone())),
+            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -203,7 +213,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
                 let x = unsafe { v.to_int_unchecked::<u64>() };
                 visitor.visit_u64(x)
             }
-            _ => Err(Error::ExpectedNum(self.val.clone())),
+            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -213,7 +223,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     {
         match self.val {
             Val::Num(v) => visitor.visit_f32(*v as f32), // TODO
-            _ => Err(Error::ExpectedNum(self.val.clone())),
+            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -223,7 +233,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     {
         match self.val {
             Val::Num(v) => visitor.visit_f64(*v),
-            _ => Err(Error::ExpectedNum(self.val.clone())),
+            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -236,7 +246,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
                 // TODO: drop unwrap, more efficient
                 visitor.visit_char(v.to_string().chars().into_iter().next().unwrap())
             }
-            _ => Err(Error::ExpectedStr(self.val.clone())),
+            _ => Err(Error::ExpectedStr(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -246,7 +256,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     {
         match self.val {
             Val::Str(v) => visitor.visit_string(v.to_string()),
-            _ => Err(Error::ExpectedStr(self.val.clone())),
+            _ => Err(Error::ExpectedStr(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -256,7 +266,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     {
         match self.val {
             Val::Str(v) => visitor.visit_string(v.to_string()),
-            _ => Err(Error::ExpectedStr(self.val.clone())),
+            _ => Err(Error::ExpectedStr(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -266,7 +276,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     {
         match self.val {
             Val::Arr(ArrValue::Bytes(v)) => visitor.visit_bytes(v.0.as_slice()),
-            _ => Err(Error::ExpectedArr(self.val.clone())),
+            _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -293,7 +303,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     {
         match self.val {
             Val::Obj(v) if v.len() == 0 => visitor.visit_unit(),
-            _ => Err(Error::ExpectedArr(self.val.clone())),
+            _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -303,7 +313,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     {
         match self.val {
             Val::Obj(v) if v.len() == 0 => visitor.visit_unit(),
-            _ => Err(Error::ExpectedArr(self.val.clone())),
+            _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -312,8 +322,12 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
         V: de::Visitor<'de>,
     {
         match self.val {
-            Val::Arr(v) if v.len() == 1 => visitor.visit_seq(ArraySeq { val: v, idx: 0 }),
-            _ => Err(Error::ExpectedArr(self.val.clone())),
+            Val::Arr(v) if v.len() == 1 => visitor.visit_seq(ArraySeq {
+                path: self.path.clone(),
+                val: v,
+                idx: 0,
+            }),
+            _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -322,8 +336,12 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
         V: de::Visitor<'de>,
     {
         match self.val {
-            Val::Arr(v) => visitor.visit_seq(ArraySeq { val: v, idx: 0 }),
-            _ => Err(Error::ExpectedArr(self.val.clone())),
+            Val::Arr(v) => visitor.visit_seq(ArraySeq {
+                path: self.path.clone(),
+                val: v,
+                idx: 0,
+            }),
+            _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -332,8 +350,12 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
         V: de::Visitor<'de>,
     {
         match self.val {
-            Val::Arr(v) if v.len() == len => visitor.visit_seq(ArraySeq { val: v, idx: 0 }),
-            _ => Err(Error::ExpectedArr(self.val.clone())),
+            Val::Arr(v) if v.len() == len => visitor.visit_seq(ArraySeq {
+                path: self.path.clone(),
+                val: v,
+                idx: 0,
+            }),
+            _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -347,8 +369,12 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
         V: de::Visitor<'de>,
     {
         match self.val {
-            Val::Arr(v) if v.len() == len => visitor.visit_seq(ArraySeq { val: v, idx: 0 }),
-            _ => Err(Error::ExpectedArr(self.val.clone())),
+            Val::Arr(v) if v.len() == len => visitor.visit_seq(ArraySeq {
+                path: self.path.clone(),
+                val: v,
+                idx: 0,
+            }),
+            _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -358,11 +384,12 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     {
         match self.val {
             Val::Obj(v) => visitor.visit_map(MapValueMap {
+                path: self.path.clone(),
                 fields: v.fields(true),
                 field_idx: 0,
                 val: &v,
             }),
-            _ => Err(Error::ExpectedObj(self.val.clone())),
+            _ => Err(Error::ExpectedObj(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -377,12 +404,12 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     {
         match self.val {
             Val::Obj(v) => visitor.visit_map(ObjValueMap {
+                path: self.path.clone(),
                 fields,
                 field_idx: 0,
                 val: v,
-                marker: PhantomData::default(),
             }),
-            _ => Err(Error::ExpectedObj(self.val.clone())),
+            _ => Err(Error::ExpectedObj(self.path.entries(), self.val.clone())),
         }
     }
 
@@ -413,14 +440,14 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a, 'de> {
     }
 }
 
-struct ObjValueMap<'a, 'de: 'a> {
+struct ObjValueMap<'a> {
+    path: ValPath,
     fields: &'static [&'static str],
     field_idx: usize,
     val: &'a ObjValue,
-    marker: PhantomData<&'de ()>,
 }
 
-impl<'a, 'de> de::MapAccess<'de> for ObjValueMap<'a, 'de> {
+impl<'a, 'de: 'a> de::MapAccess<'de> for ObjValueMap<'a> {
     type Error = Error;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>>
@@ -432,8 +459,10 @@ impl<'a, 'de> de::MapAccess<'de> for ObjValueMap<'a, 'de> {
         }
         let key = self.fields[self.field_idx];
         match self.val.field_visibility(key.into()) {
-            Some(Visibility::Hidden) => return Err(Error::FieldNotVisible(key.to_owned())),
-            None => return Err(Error::FieldNotFound(key.to_owned())),
+            Some(Visibility::Hidden) => {
+                return Err(Error::FieldNotVisible(self.path.entries(), key.to_owned()))
+            }
+            None => return Err(Error::FieldNotFound(self.path.entries(), key.to_owned())),
             _ => {}
         }
         seed.deserialize(StrDeserializer::new(key)).map(Some)
@@ -444,21 +473,24 @@ impl<'a, 'de> de::MapAccess<'de> for ObjValueMap<'a, 'de> {
         V: de::DeserializeSeed<'de>,
     {
         let key = self.fields[self.field_idx];
+        let _guard = self.path.push(ValPathEntry::Field(key.to_string()));
         self.field_idx += 1;
         match self.val.get(key.into())? {
             Some(f) => {
                 let mut d = Deserializer {
+                    path: self.path.clone(),
                     val: &f,
-                    marker: PhantomData::default(),
+                    marker: Default::default(),
                 };
                 seed.deserialize(&mut d)
             }
-            None => Err(Error::FieldNotFound(key.to_owned())),
+            None => Err(Error::FieldNotFound(self.path.entries(), key.to_owned())),
         }
     }
 }
 
 struct ArraySeq<'a> {
+    path: ValPath,
     val: &'a ArrValue,
     idx: usize,
 }
@@ -476,21 +508,24 @@ impl<'a, 'de: 'a> de::SeqAccess<'de> for ArraySeq<'a> {
         if self.idx == self.val.len() {
             return Ok(None);
         }
+        let _guard = self.path.push(ValPathEntry::ArrayIndex(self.idx));
         match self.val.get(self.idx)? {
             Some(val) => {
                 self.idx += 1;
                 let mut d = Deserializer {
+                    path: self.path.clone(),
                     val: &val,
-                    marker: PhantomData::default(),
+                    marker: Default::default(),
                 };
                 seed.deserialize(&mut d).map(Some)
             }
-            None => Err(Error::FieldNotFound("".to_owned())),
+            None => Err(Error::FieldNotFound(self.path.entries(), "".to_owned())),
         }
     }
 }
 
 struct MapValueMap<'a> {
+    path: ValPath,
     fields: Vec<IStr>,
     field_idx: usize,
     val: &'a ObjValue,
@@ -509,8 +544,10 @@ impl<'a, 'de: 'a> de::MapAccess<'de> for MapValueMap<'a> {
 
         let key = &self.fields[self.field_idx];
         match self.val.field_visibility(key.clone()) {
-            Some(Visibility::Hidden) => return Err(Error::FieldNotVisible(key.to_string())),
-            None => return Err(Error::FieldNotFound(key.to_string())),
+            Some(Visibility::Hidden) => {
+                return Err(Error::FieldNotVisible(self.path.entries(), key.to_string()))
+            }
+            None => return Err(Error::FieldNotFound(self.path.entries(), key.to_string())),
             _ => {}
         }
         seed.deserialize(StrDeserializer::new(key.as_str()))
@@ -522,16 +559,18 @@ impl<'a, 'de: 'a> de::MapAccess<'de> for MapValueMap<'a> {
         V: de::DeserializeSeed<'de>,
     {
         let key = &self.fields[self.field_idx];
+        let _guard = self.path.push(ValPathEntry::Field(key.to_string()));
         self.field_idx += 1;
         match self.val.get(key.clone())? {
             Some(f) => {
                 let mut d = Deserializer {
+                    path: self.path.clone(),
                     val: &f,
                     marker: PhantomData::default(),
                 };
                 seed.deserialize(&mut d)
             }
-            None => Err(Error::FieldNotFound(key.to_string())),
+            None => Err(Error::FieldNotFound(self.path.entries(), key.to_string())),
         }
     }
 }

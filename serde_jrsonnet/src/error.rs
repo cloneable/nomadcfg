@@ -1,6 +1,6 @@
 use jrsonnet_evaluator::Val;
 use serde::{de, ser};
-use std::fmt;
+use std::{cell::RefCell, fmt, rc::Rc};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -10,19 +10,19 @@ pub type Result<T> = std::result::Result<T, Error>;
 // processed.
 #[derive(Debug)]
 pub enum Error {
-    FieldNotVisible(String),
-    FieldNotFound(String),
+    FieldNotVisible(Vec<ValPathEntry>, String),
+    FieldNotFound(Vec<ValPathEntry>, String),
 
-    ExpectedBool(Val),
-    ExpectedNull(Val),
-    ExpectedStr(Val),
-    ExpectedNum(Val),
-    ExpectedArr(Val),
-    ExpectedObj(Val),
-    ExpectedFunc(Val),
+    ExpectedBool(Vec<ValPathEntry>, Val),
+    ExpectedNull(Vec<ValPathEntry>, Val),
+    ExpectedStr(Vec<ValPathEntry>, Val),
+    ExpectedNum(Vec<ValPathEntry>, Val),
+    ExpectedArr(Vec<ValPathEntry>, Val),
+    ExpectedObj(Vec<ValPathEntry>, Val),
+    ExpectedFunc(Vec<ValPathEntry>, Val),
 
     IdentifierExpected,
-    UnexpectedVal(Val),
+    UnexpectedVal(Vec<ValPathEntry>, Val),
 
     // One or more variants that can be created by data structures through the
     // `ser::Error` and `de::Error` traits. For example the Serialize impl for
@@ -63,4 +63,39 @@ impl From<jrsonnet_evaluator::Error> for Error {
     fn from(value: jrsonnet_evaluator::Error) -> Self {
         Error::Eval(value)
     }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ValPath(Rc<RefCell<Vec<ValPathEntry>>>);
+
+impl ValPath {
+    pub fn push(&mut self, entry: ValPathEntry) -> ValPathGuard {
+        self.0.borrow_mut().push(entry);
+        ValPathGuard { path: self.clone() }
+    }
+
+    fn pop(&mut self) -> &mut Self {
+        self.0.borrow_mut().pop().expect("path empty");
+        self
+    }
+
+    pub fn entries(&self) -> Vec<ValPathEntry> {
+        self.0.borrow().clone()
+    }
+}
+
+pub struct ValPathGuard {
+    path: ValPath,
+}
+
+impl Drop for ValPathGuard {
+    fn drop(&mut self) {
+        self.path.pop();
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum ValPathEntry {
+    Field(String),
+    ArrayIndex(usize),
 }
