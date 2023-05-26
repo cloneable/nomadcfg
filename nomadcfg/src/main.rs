@@ -1,5 +1,10 @@
 use clap::{Parser, ValueEnum};
-use jrsonnet_evaluator::{trace::PathResolver, FileImportResolver, State, Val};
+use jrsonnet_evaluator::{
+    function::FuncVal,
+    trace::PathResolver,
+    val::{ArrValue, StrValue},
+    FileImportResolver, ObjValue, State, Val,
+};
 use jrsonnet_stdlib::ContextInitializer;
 use serde::{Deserialize, Serialize};
 use std::{error::Error, path::PathBuf, process};
@@ -58,27 +63,11 @@ pub fn main() -> Result<(), Box<dyn Error + 'static>> {
         Val::Arr(ref jobs) => {
             for job in jobs.iter() {
                 let val: Val = job?;
-                let job: nomadapi::types::Job =
-                    match serde_jrsonnet::from_val(&val, opts.error_on_unknown_field) {
-                        Ok(spec) => spec,
-                        Err(err) => {
-                            eprintln!("Error: {err}");
-                            process::exit(1);
-                        }
-                    };
-                jobspecs.push(Jobspec { job });
+                jobspecs.push(build_jobspec(&val, opts.error_on_unknown_field)?);
             }
         }
         Val::Obj(_) => {
-            let job: nomadapi::types::Job =
-                match serde_jrsonnet::from_val(&val, opts.error_on_unknown_field) {
-                    Ok(spec) => spec,
-                    Err(err) => {
-                        eprintln!("Error: {err}");
-                        process::exit(1);
-                    }
-                };
-            jobspecs.push(Jobspec { job });
+            jobspecs.push(build_jobspec(&val, opts.error_on_unknown_field)?);
         }
         _ => {
             eprintln!("Error: expected job or array of jobs");
@@ -108,4 +97,18 @@ pub fn main() -> Result<(), Box<dyn Error + 'static>> {
     }
 
     Ok(())
+}
+
+fn build_jobspec(
+    val: &Val,
+    error_on_unknown_field: bool,
+) -> Result<Jobspec, Box<dyn Error + 'static>> {
+    let job: nomadapi::types::Job = match serde_jrsonnet::from_val(val, error_on_unknown_field) {
+        Ok(spec) => spec,
+        Err(err) => {
+            eprintln!("Error: {err}");
+            process::exit(1);
+        }
+    };
+    Ok(Jobspec { job })
 }
