@@ -44,6 +44,9 @@ pub enum Error {
 
     #[error("evaluator error: {0}")]
     Evaluator(#[from] jrsonnet_evaluator::Error),
+
+    #[error("{0}: invalid key field value: {1}")]
+    InvalidKeyFieldValue(ValPath, ValType),
 }
 
 impl ser::Error for Error {

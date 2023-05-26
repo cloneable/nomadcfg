@@ -2,12 +2,17 @@ mod error;
 
 use crate::error::{RcValPath, ValPathEntry};
 use error::{Error, Result};
-use jrsonnet_evaluator::{val::ArrValue, ObjValue, Val};
+use jrsonnet_evaluator::{
+    val::{ArrValue, StrValue},
+    ObjValue, ObjValueBuilder, Val,
+};
 use jrsonnet_parser::{IStr, Visibility};
 use serde::{
     de::{self, value::StrDeserializer},
     Deserialize,
 };
+
+const KEY_FIELD_NAME: &str = "$key";
 
 pub struct Deserializer<'a> {
     path: RcValPath,
@@ -399,6 +404,12 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 idx: 0,
                 error_on_unknown_field: self.error_on_unknown_field,
             }),
+            Val::Obj(v) => visitor.visit_seq(ArraySeq {
+                path: self.path.clone(),
+                val: &convert_object_to_array(&self.path, &v)?,
+                idx: 0,
+                error_on_unknown_field: self.error_on_unknown_field,
+            }),
             _ => Err(Error::ExpectedArr(
                 self.path.entries(),
                 self.val.value_type(),
@@ -515,6 +526,50 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
     {
         visitor.visit_unit()
     }
+}
+
+fn convert_object_to_array(path: &RcValPath, obj: &ObjValue) -> Result<ArrValue> {
+    let key_field = match obj.get(KEY_FIELD_NAME.into())? {
+        Some(Val::Str(key_field)) => Some(key_field),
+        Some(v) => return Err(Error::InvalidKeyFieldValue(path.entries(), v.value_type())),
+        None => None,
+    };
+
+    Ok(ArrValue::from_iter(
+        obj.iter(true)
+            .map(|(n, v)| (n, v, key_field.as_ref()))
+            .map(convert_field_to_value)
+            .filter_map(|v| v.ok()),
+    ))
+}
+
+fn convert_field_to_value(
+    (name, value, key_field): (IStr, jrsonnet_evaluator::Result<Val>, Option<&StrValue>),
+) -> jrsonnet_evaluator::Result<Val> {
+    match value {
+        Ok(val @ Val::Obj(_)) => match key_field {
+            Some(key_name) => Ok(Val::Obj(merge_key_field_into_object(
+                &val.as_obj().unwrap(),
+                key_name,
+                name,
+            )?)),
+            None => Ok(val),
+        },
+        Ok(val) => Ok(val),
+        Err(err) => Err(err),
+    }
+}
+
+fn merge_key_field_into_object(
+    obj: &ObjValue,
+    name: &StrValue,
+    value: IStr,
+) -> jrsonnet_evaluator::Result<ObjValue> {
+    let mut b = ObjValueBuilder::new();
+    b.with_super(obj.clone());
+    b.member(name.clone().into_flat())
+        .value(Val::Str(StrValue::Flat(value)))?;
+    Ok(b.build())
 }
 
 struct ObjValueMap<'a> {
