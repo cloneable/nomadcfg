@@ -1,5 +1,5 @@
 use clap::{Parser, ValueEnum};
-use jrsonnet_evaluator::{trace::PathResolver, FileImportResolver, State};
+use jrsonnet_evaluator::{trace::PathResolver, FileImportResolver, State, Val};
 use jrsonnet_stdlib::ContextInitializer;
 use serde::{Deserialize, Serialize};
 use std::{error::Error, path::PathBuf, process};
@@ -9,6 +9,9 @@ use std::{error::Error, path::PathBuf, process};
 struct Opts {
     #[arg(long, value_name = "FILE")]
     spec: PathBuf,
+
+    #[arg(long, value_name = "JOB ID")]
+    job_id: Option<String>,
 
     #[arg(long, default_value = "latest", value_name = "TAG")]
     imagetag: String,
@@ -49,21 +52,59 @@ pub fn main() -> Result<(), Box<dyn Error + 'static>> {
     let val = state.import(opts.spec)?;
     // let val = apply_tla(state.clone(), &tla, val)?;
 
-    let spec: Jobspec = match serde_jrsonnet::from_val(&val, opts.error_on_unknown_field) {
-        Ok(spec) => spec,
-        Err(err) => {
-            eprintln!("Error: {err}");
+    // TODO: only eval requested job
+    let mut jobspecs = Vec::new();
+    match val {
+        Val::Arr(ref jobs) => {
+            for job in jobs.iter() {
+                let val: Val = job?;
+                let spec: Jobspec =
+                    match serde_jrsonnet::from_val(&val, opts.error_on_unknown_field) {
+                        Ok(spec) => spec,
+                        Err(err) => {
+                            eprintln!("Error: {err}");
+                            process::exit(1);
+                        }
+                    };
+                jobspecs.push(spec);
+            }
+        }
+        Val::Obj(_) => {
+            let spec: Jobspec = match serde_jrsonnet::from_val(&val, opts.error_on_unknown_field) {
+                Ok(spec) => spec,
+                Err(err) => {
+                    eprintln!("Error: {err}");
+                    process::exit(1);
+                }
+            };
+            jobspecs.push(spec);
+        }
+        _ => {
+            eprintln!("Error: expected job or array of jobs");
             process::exit(1);
         }
-    };
+    }
 
-    let output = match opts.format {
-        Format::Json => serde_json::to_string_pretty(&spec)?,
-        Format::Yaml => serde_yaml::to_string(&spec)?,
-        Format::Toml => toml::to_string_pretty(&spec)?,
-    };
+    let mut found = false;
+    for spec in &jobspecs {
+        if opts.job_id.is_none()
+            || opts.job_id.as_ref().unwrap()
+                == spec.job.id.as_ref().unwrap_or(&"*UNSET*".to_owned())
+        {
+            found = true;
+            let output = match opts.format {
+                Format::Json => serde_json::to_string_pretty(&spec)?,
+                Format::Yaml => serde_yaml::to_string(&spec)?,
+                Format::Toml => toml::to_string_pretty(&spec)?,
+            };
+            println!("{output}");
+        }
+    }
 
-    println!("{output}");
+    if !found {
+        eprintln!("No job(s) found.");
+        process::exit(1);
+    }
 
     Ok(())
 }
