@@ -1,4 +1,4 @@
-use jrsonnet_evaluator::Val;
+use jrsonnet_evaluator::typed::ValType;
 use serde::{de, ser};
 use std::{cell::RefCell, fmt, rc::Rc};
 
@@ -13,31 +13,31 @@ pub enum Error {
     FieldNotFound(ValPath, String),
 
     #[error("{0}: expected Bool, found {1:?}")]
-    ExpectedBool(ValPath, Val),
+    ExpectedBool(ValPath, ValType),
 
     #[error("{0}: expected Null, found {1:?}")]
-    ExpectedNull(ValPath, Val),
+    ExpectedNull(ValPath, ValType),
 
     #[error("{0}: expected Str, found {1:?}")]
-    ExpectedStr(ValPath, Val),
+    ExpectedStr(ValPath, ValType),
 
     #[error("{0}: expected Num, found {1:?}")]
-    ExpectedNum(ValPath, Val),
+    ExpectedNum(ValPath, ValType),
 
     #[error("{0}: expected Array, found {1:?}")]
-    ExpectedArr(ValPath, Val),
+    ExpectedArr(ValPath, ValType),
 
     #[error("{0}: expected Obj, found {1:?}")]
-    ExpectedObj(ValPath, Val),
+    ExpectedObj(ValPath, ValType),
 
     #[error("{0}: expected Func, found {1:?}")]
-    ExpectedFunc(ValPath, Val),
+    ExpectedFunc(ValPath, ValType),
 
     #[error("{0}: expected identifier")]
     IdentifierExpected(ValPath),
 
     #[error("{0}: unexpected value: {1:?}")]
-    UnexpectedVal(ValPath, Val),
+    UnexpectedVal(ValPath, ValType),
 
     #[error("serde error: {0}")]
     Serde(String),

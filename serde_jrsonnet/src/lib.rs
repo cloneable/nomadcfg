@@ -44,7 +44,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
             Val::Bool(v) => visitor.visit_bool(*v),
             Val::Null => visitor.visit_none(),
             Val::Num(v) => visitor.visit_f64(*v),
-            Val::Func(_) => Err(Error::UnexpectedVal(self.path.entries(), self.val.clone())),
+            Val::Func(_) => Err(Error::UnexpectedVal(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
             Val::Str(v) => visitor.visit_string(v.to_string()),
             Val::Obj(v) => visitor.visit_map(MapValueMap {
                 path: self.path.clone(),
@@ -68,7 +71,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
     {
         match self.val {
             Val::Bool(v) => visitor.visit_bool(*v),
-            _ => Err(Error::ExpectedBool(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedBool(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -86,7 +92,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 let x = unsafe { v.to_int_unchecked::<i8>() };
                 visitor.visit_i8(x)
             }
-            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedNum(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -104,7 +113,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 let x = unsafe { v.to_int_unchecked::<i16>() };
                 visitor.visit_i16(x)
             }
-            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedNum(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -122,7 +134,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 let x = unsafe { v.to_int_unchecked::<i32>() };
                 visitor.visit_i32(x)
             }
-            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedNum(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -140,7 +155,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 let x = unsafe { v.to_int_unchecked::<i64>() };
                 visitor.visit_i64(x)
             }
-            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedNum(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -158,7 +176,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 let x = unsafe { v.to_int_unchecked::<u8>() };
                 visitor.visit_u8(x)
             }
-            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedNum(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -176,7 +197,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 let x = unsafe { v.to_int_unchecked::<u16>() };
                 visitor.visit_u16(x)
             }
-            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedNum(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -194,7 +218,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 let x = unsafe { v.to_int_unchecked::<u32>() };
                 visitor.visit_u32(x)
             }
-            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedNum(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -212,7 +239,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 let x = unsafe { v.to_int_unchecked::<u64>() };
                 visitor.visit_u64(x)
             }
-            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedNum(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -222,7 +252,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
     {
         match self.val {
             Val::Num(v) => visitor.visit_f32(*v as f32), // TODO
-            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedNum(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -232,7 +265,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
     {
         match self.val {
             Val::Num(v) => visitor.visit_f64(*v),
-            _ => Err(Error::ExpectedNum(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedNum(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -245,7 +281,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 // TODO: drop unwrap, more efficient
                 visitor.visit_char(v.to_string().chars().into_iter().next().unwrap())
             }
-            _ => Err(Error::ExpectedStr(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedStr(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -255,7 +294,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
     {
         match self.val {
             Val::Str(v) => visitor.visit_string(v.to_string()),
-            _ => Err(Error::ExpectedStr(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedStr(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -265,7 +307,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
     {
         match self.val {
             Val::Str(v) => visitor.visit_string(v.to_string()),
-            _ => Err(Error::ExpectedStr(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedStr(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -275,7 +320,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
     {
         match self.val {
             Val::Arr(ArrValue::Bytes(v)) => visitor.visit_bytes(v.0.as_slice()),
-            _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedArr(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -302,7 +350,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
     {
         match self.val {
             Val::Obj(v) if v.len() == 0 => visitor.visit_unit(),
-            _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedArr(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -312,7 +363,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
     {
         match self.val {
             Val::Obj(v) if v.len() == 0 => visitor.visit_unit(),
-            _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedArr(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -327,7 +381,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 idx: 0,
                 error_on_unknown_field: self.error_on_unknown_field,
             }),
-            _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedArr(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -342,7 +399,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 idx: 0,
                 error_on_unknown_field: self.error_on_unknown_field,
             }),
-            _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedArr(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -357,7 +417,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 idx: 0,
                 error_on_unknown_field: self.error_on_unknown_field,
             }),
-            _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedArr(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -377,7 +440,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 idx: 0,
                 error_on_unknown_field: self.error_on_unknown_field,
             }),
-            _ => Err(Error::ExpectedArr(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedArr(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -393,7 +459,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 val: &v,
                 error_on_unknown_field: self.error_on_unknown_field,
             }),
-            _ => Err(Error::ExpectedObj(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedObj(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
@@ -414,7 +483,10 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 val: v,
                 error_on_unknown_field: self.error_on_unknown_field,
             }),
-            _ => Err(Error::ExpectedObj(self.path.entries(), self.val.clone())),
+            _ => Err(Error::ExpectedObj(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
         }
     }
 
