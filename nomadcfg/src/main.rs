@@ -58,7 +58,7 @@ pub fn main() -> Result<(), Box<dyn Error + 'static>> {
         Val::Arr(ref jobs) => {
             for job in jobs.iter() {
                 let val: Val = job?;
-                let spec: Jobspec =
+                let job: nomadapi::types::Job =
                     match serde_jrsonnet::from_val(&val, opts.error_on_unknown_field) {
                         Ok(spec) => spec,
                         Err(err) => {
@@ -66,18 +66,19 @@ pub fn main() -> Result<(), Box<dyn Error + 'static>> {
                             process::exit(1);
                         }
                     };
-                jobspecs.push(spec);
+                jobspecs.push(Jobspec { job });
             }
         }
         Val::Obj(_) => {
-            let spec: Jobspec = match serde_jrsonnet::from_val(&val, opts.error_on_unknown_field) {
-                Ok(spec) => spec,
-                Err(err) => {
-                    eprintln!("Error: {err}");
-                    process::exit(1);
-                }
-            };
-            jobspecs.push(spec);
+            let job: nomadapi::types::Job =
+                match serde_jrsonnet::from_val(&val, opts.error_on_unknown_field) {
+                    Ok(spec) => spec,
+                    Err(err) => {
+                        eprintln!("Error: {err}");
+                        process::exit(1);
+                    }
+                };
+            jobspecs.push(Jobspec { job });
         }
         _ => {
             eprintln!("Error: expected job or array of jobs");
