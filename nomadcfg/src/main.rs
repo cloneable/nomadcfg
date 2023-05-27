@@ -1,10 +1,5 @@
 use clap::{Parser, ValueEnum};
-use jrsonnet_evaluator::{
-    function::FuncVal,
-    trace::PathResolver,
-    val::{ArrValue, StrValue},
-    FileImportResolver, ObjValue, State, Val,
-};
+use jrsonnet_evaluator::{trace::PathResolver, FileImportResolver, State, Val};
 use jrsonnet_stdlib::ContextInitializer;
 use serde::{Deserialize, Serialize};
 use std::{error::Error, path::PathBuf, process};

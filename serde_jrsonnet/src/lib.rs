@@ -97,6 +97,11 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 let x = unsafe { v.to_int_unchecked::<i8>() };
                 visitor.visit_i8(x)
             }
+            Val::Str(v) => visitor.visit_i8(
+                v.to_string()
+                    .parse()
+                    .map_err(|_| Error::ExpectedNum(self.path.entries(), self.val.value_type()))?,
+            ),
             _ => Err(Error::ExpectedNum(
                 self.path.entries(),
                 self.val.value_type(),
@@ -118,6 +123,11 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 let x = unsafe { v.to_int_unchecked::<i16>() };
                 visitor.visit_i16(x)
             }
+            Val::Str(v) => visitor.visit_i16(
+                v.to_string()
+                    .parse()
+                    .map_err(|_| Error::ExpectedNum(self.path.entries(), self.val.value_type()))?,
+            ),
             _ => Err(Error::ExpectedNum(
                 self.path.entries(),
                 self.val.value_type(),
@@ -139,6 +149,11 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 let x = unsafe { v.to_int_unchecked::<i32>() };
                 visitor.visit_i32(x)
             }
+            Val::Str(v) => visitor.visit_i32(
+                v.to_string()
+                    .parse()
+                    .map_err(|_| Error::ExpectedNum(self.path.entries(), self.val.value_type()))?,
+            ),
             _ => Err(Error::ExpectedNum(
                 self.path.entries(),
                 self.val.value_type(),
@@ -160,10 +175,43 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 let x = unsafe { v.to_int_unchecked::<i64>() };
                 visitor.visit_i64(x)
             }
+            Val::Str(v) => visitor.visit_i64(
+                v.to_string()
+                    .parse()
+                    .map_err(|_| Error::ExpectedNum(self.path.entries(), self.val.value_type()))?,
+            ),
             _ => Err(Error::ExpectedNum(
                 self.path.entries(),
                 self.val.value_type(),
             )),
+        }
+    }
+
+    serde::serde_if_integer128! {
+        fn deserialize_i128<V>(self, visitor: V) -> Result<V::Value>
+        where
+            V: de::Visitor<'de>
+        {
+            match self.val {
+                Val::Num(v)
+                    if !v.is_nan()
+                        && *v >= i128::MIN as f64
+                        && *v <= i128::MAX as f64
+                        && v.trunc() == *v =>
+                {
+                    let x = unsafe { v.to_int_unchecked::<i128>() };
+                    visitor.visit_i128(x)
+                }
+                Val::Str(v) => visitor.visit_i128(
+                    v.to_string()
+                        .parse()
+                        .map_err(|_| Error::ExpectedNum(self.path.entries(), self.val.value_type()))?,
+                ),
+                _ => Err(Error::ExpectedNum(
+                    self.path.entries(),
+                    self.val.value_type(),
+                )),
+            }
         }
     }
 
@@ -181,6 +229,11 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 let x = unsafe { v.to_int_unchecked::<u8>() };
                 visitor.visit_u8(x)
             }
+            Val::Str(v) => visitor.visit_u8(
+                v.to_string()
+                    .parse()
+                    .map_err(|_| Error::ExpectedNum(self.path.entries(), self.val.value_type()))?,
+            ),
             _ => Err(Error::ExpectedNum(
                 self.path.entries(),
                 self.val.value_type(),
@@ -202,6 +255,11 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 let x = unsafe { v.to_int_unchecked::<u16>() };
                 visitor.visit_u16(x)
             }
+            Val::Str(v) => visitor.visit_u16(
+                v.to_string()
+                    .parse()
+                    .map_err(|_| Error::ExpectedNum(self.path.entries(), self.val.value_type()))?,
+            ),
             _ => Err(Error::ExpectedNum(
                 self.path.entries(),
                 self.val.value_type(),
@@ -223,6 +281,11 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 let x = unsafe { v.to_int_unchecked::<u32>() };
                 visitor.visit_u32(x)
             }
+            Val::Str(v) => visitor.visit_u32(
+                v.to_string()
+                    .parse()
+                    .map_err(|_| Error::ExpectedNum(self.path.entries(), self.val.value_type()))?,
+            ),
             _ => Err(Error::ExpectedNum(
                 self.path.entries(),
                 self.val.value_type(),
@@ -244,10 +307,43 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 let x = unsafe { v.to_int_unchecked::<u64>() };
                 visitor.visit_u64(x)
             }
+            Val::Str(v) => visitor.visit_u64(
+                v.to_string()
+                    .parse()
+                    .map_err(|_| Error::ExpectedNum(self.path.entries(), self.val.value_type()))?,
+            ),
             _ => Err(Error::ExpectedNum(
                 self.path.entries(),
                 self.val.value_type(),
             )),
+        }
+    }
+
+    serde::serde_if_integer128! {
+        fn deserialize_u128<V>(self, visitor: V) -> Result<V::Value>
+        where
+            V: de::Visitor<'de>
+        {
+            match self.val {
+                Val::Num(v)
+                    if !v.is_nan()
+                        && *v >= u128::MIN as f64
+                        && *v <= u128::MAX as f64
+                        && v.trunc() == *v =>
+                {
+                    let x = unsafe { v.to_int_unchecked::<u128>() };
+                    visitor.visit_u128(x)
+                }
+                Val::Str(v) => visitor.visit_u128(
+                    v.to_string()
+                        .parse()
+                        .map_err(|_| Error::ExpectedNum(self.path.entries(), self.val.value_type()))?,
+                ),
+                _ => Err(Error::ExpectedNum(
+                    self.path.entries(),
+                    self.val.value_type(),
+                )),
+            }
         }
     }
 
