@@ -449,6 +449,7 @@ dependencies = [
  "hashbrown 0.13.2",
  "jrsonnet-gcmodule",
  "rustc-hash",
+ "structdump",
 ]
 
 [[package]]
@@ -470,6 +471,7 @@ dependencies = [
  "jrsonnet-interner",
  "peg",
  "static_assertions",
+ "structdump",
 ]
 
 [[package]]
@@ -609,6 +611,7 @@ dependencies = [
  "serde_jrsonnet",
  "serde_json",
  "serde_yaml",
+ "thiserror",
  "toml",
 ]
 

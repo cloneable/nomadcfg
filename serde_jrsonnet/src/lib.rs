@@ -1,4 +1,4 @@
-mod error;
+pub mod error;
 
 use crate::error::{RcValPath, ValPathEntry};
 use error::{Error, Result};

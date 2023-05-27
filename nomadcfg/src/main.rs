@@ -1,8 +1,11 @@
 use clap::{Parser, ValueEnum};
-use jrsonnet_evaluator::{trace::PathResolver, FileImportResolver, State, Val};
+use jrsonnet_evaluator::{
+    trace::{ExplainingFormat, PathResolver},
+    FileImportResolver, State, Val,
+};
 use jrsonnet_stdlib::ContextInitializer;
 use serde::{Deserialize, Serialize};
-use std::{error::Error, path::PathBuf, process};
+use std::{path::PathBuf, process};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -36,9 +39,28 @@ struct Jobspec {
     job: nomadapi::types::Job,
 }
 
-pub fn main() -> Result<(), Box<dyn Error + 'static>> {
+pub fn main() -> Result<(), Error> {
     let opts = Opts::parse();
 
+    match run(opts) {
+        Err(Error::SerdeJrsonnet(serde_jrsonnet::error::Error::Evaluator(e)))
+        | Err(Error::Jrsonnet(e)) => {
+            use jrsonnet_evaluator::trace::TraceFormat;
+
+            let trace = Box::new(ExplainingFormat {
+                resolver: PathResolver::new_cwd_fallback(),
+                max_trace: 10,
+            });
+            let mut out = String::new();
+            trace.write_trace(&mut out, &e).expect("format error");
+            eprintln!("{out}");
+            process::exit(1);
+        }
+        r => r,
+    }
+}
+
+fn run(opts: Opts) -> Result<(), Error> {
     let state = State::default();
     state.set_import_resolver(FileImportResolver::default());
 
@@ -58,15 +80,18 @@ pub fn main() -> Result<(), Box<dyn Error + 'static>> {
         Val::Arr(ref jobs) => {
             for job in jobs.iter() {
                 let val: Val = job?;
-                jobspecs.push(build_jobspec(&val, opts.error_on_unknown_field)?);
+                jobspecs.push(Jobspec {
+                    job: serde_jrsonnet::from_val(&val, opts.error_on_unknown_field)?,
+                });
             }
         }
         Val::Obj(_) => {
-            jobspecs.push(build_jobspec(&val, opts.error_on_unknown_field)?);
+            jobspecs.push(Jobspec {
+                job: serde_jrsonnet::from_val(&val, opts.error_on_unknown_field)?,
+            });
         }
         _ => {
-            eprintln!("Error: expected job or array of jobs");
-            process::exit(1);
+            return Err(Error::ExpectedJobOrArrayOfJobs);
         }
     }
 
@@ -94,16 +119,26 @@ pub fn main() -> Result<(), Box<dyn Error + 'static>> {
     Ok(())
 }
 
-fn build_jobspec(
-    val: &Val,
-    error_on_unknown_field: bool,
-) -> Result<Jobspec, Box<dyn Error + 'static>> {
-    let job: nomadapi::types::Job = match serde_jrsonnet::from_val(val, error_on_unknown_field) {
-        Ok(spec) => spec,
-        Err(err) => {
-            eprintln!("Error: {err}");
-            process::exit(1);
-        }
-    };
-    Ok(Jobspec { job })
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("no job(s) found")]
+    NoJobsFound,
+
+    #[error("expected job or array of jobs")]
+    ExpectedJobOrArrayOfJobs,
+
+    #[error("jrsonnet error: {0}")]
+    Jrsonnet(#[from] jrsonnet_evaluator::Error),
+
+    #[error("serde_jrsonnet error: {0}")]
+    SerdeJrsonnet(#[from] serde_jrsonnet::error::Error),
+
+    #[error("serde_json error: {0}")]
+    SerdeJson(#[from] serde_json::Error),
+
+    #[error("serde_yaml error: {0}")]
+    SerdeYaml(#[from] serde_yaml::Error),
+
+    #[error("toml error: {0}")]
+    Toml(#[from] toml::ser::Error),
 }
