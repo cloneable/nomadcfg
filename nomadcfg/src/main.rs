@@ -24,6 +24,9 @@ struct Opts {
 
     #[arg(long)]
     error_on_unknown_field: bool,
+
+    #[arg(long)]
+    unnested_job: bool,
 }
 
 #[derive(Clone, ValueEnum)]
@@ -75,20 +78,28 @@ fn run(opts: Opts) -> Result<(), Error> {
     // let val = apply_tla(state.clone(), &tla, val)?;
 
     // TODO: only eval requested job
-    let mut jobspecs = Vec::new();
+    let mut jobspecs = Vec::<Jobspec>::new();
     match val {
         Val::Arr(ref jobs) => {
             for job in jobs.iter() {
                 let val: Val = job?;
-                jobspecs.push(Jobspec {
-                    job: serde_jrsonnet::from_val(&val, opts.error_on_unknown_field)?,
-                });
+                if opts.unnested_job {
+                    jobspecs.push(Jobspec {
+                        job: serde_jrsonnet::from_val(&val, opts.error_on_unknown_field)?,
+                    });
+                } else {
+                    jobspecs.push(serde_jrsonnet::from_val(&val, opts.error_on_unknown_field)?);
+                }
             }
         }
         Val::Obj(_) => {
-            jobspecs.push(Jobspec {
-                job: serde_jrsonnet::from_val(&val, opts.error_on_unknown_field)?,
-            });
+            if opts.unnested_job {
+                jobspecs.push(Jobspec {
+                    job: serde_jrsonnet::from_val(&val, opts.error_on_unknown_field)?,
+                });
+            } else {
+                jobspecs.push(serde_jrsonnet::from_val(&val, opts.error_on_unknown_field)?);
+            }
         }
         _ => {
             return Err(Error::ExpectedJobOrArrayOfJobs);
