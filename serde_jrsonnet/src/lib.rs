@@ -633,6 +633,7 @@ fn convert_object_to_array(path: &RcValPath, obj: &ObjValue) -> Result<ArrValue>
 
     Ok(ArrValue::from_iter(
         obj.iter(true)
+            .filter(|(n, _)| n != KEY_FIELD_NAME)
             .map(|(n, v)| (n, v, key_field.as_ref()))
             .map(convert_field_to_value)
             .filter_map(|v| v.ok()),
