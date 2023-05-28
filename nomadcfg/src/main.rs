@@ -1,3 +1,5 @@
+mod nomadapi;
+
 use clap::{Parser, ValueEnum};
 use jrsonnet_evaluator::{
     trace::{ExplainingFormat, PathResolver},

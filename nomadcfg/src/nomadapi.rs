@@ -1,3 +1,4 @@
+// Generated from https://github.com/hashicorp/nomad-openapi/blob/094ef14feb7a3fb761eb62c7d4242fe6512f2f08/v1/openapi.yaml by progenitor.
 pub mod types {
     use serde::{Deserialize, Serialize};
     #[allow(unused_imports)]

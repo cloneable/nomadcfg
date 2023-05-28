@@ -13,13 +13,13 @@ allow = [
     "Apache-2.0",
     "BSD-3-Clause",
     "MIT",
+    "MPL-2.0",
 ]
 copyleft = "deny"
 allow-osi-fsf-free = "neither"
 default = "deny"
 confidence-threshold = 0.9
 exceptions = [
-    { allow = ["MPL-2.0"], name = "progenitor-client", version = "*" },
     { allow = ["Unicode-DFS-2016"], name = "unicode-ident", version = "*" },
 ]
 

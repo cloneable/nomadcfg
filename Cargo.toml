@@ -1,5 +1,5 @@
 [workspace]
-members = ["nomadapi", "nomadcfg", "serde_jrsonnet"]
+members = ["nomadcfg", "serde_jrsonnet"]
 default-members = ["nomadcfg"]
 
 [profile.release]

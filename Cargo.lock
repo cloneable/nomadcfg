@@ -389,23 +389,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
 
 [[package]]
-name = "nomadapi"
-version = "0.0.0"
-dependencies = [
- "chrono",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "nomadcfg"
 version = "0.0.0"
 dependencies = [
+ "chrono",
  "clap",
  "jrsonnet-evaluator",
  "jrsonnet-parser",
  "jrsonnet-stdlib",
- "nomadapi",
  "serde",
  "serde_jrsonnet",
  "serde_json",
