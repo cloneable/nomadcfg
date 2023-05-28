@@ -1,13 +1,18 @@
 [package]
 name = "nomadcfg"
-version = "0.0.0"
+version = "0.0.1"
 edition = "2021"
+description = "A CLI tool for defining HashiCorp Nomad job specs in jsonnet."
 authors = ["Folke B."]
 license = "Apache-2.0"
+repository = "https://github.com/cloneable/nomadcfg"
+categories = ["command-line-utilities"]
+keywords = ["nomad", "jsonnet"]
+exclude = [".gitignore", ".github", "deny.toml", "target"]
 
 [dependencies]
 chrono = { version = "0.4", default-features = false, features = ["serde"] }
-clap = { version = "4.3", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
 jrsonnet-evaluator = { version = "0.5.0-pre9", features = ["exp-preserve-order"] }
 jrsonnet-parser = { version = "0.5.0-pre9" }
 jrsonnet-stdlib = { version = "0.5.0-pre9", features = ["exp-preserve-order"] }
@@ -23,4 +28,3 @@ lto = true
 codegen-units = 1
 panic = "abort"
 debug = false
-strip = true
