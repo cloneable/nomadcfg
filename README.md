@@ -46,3 +46,14 @@ local job(name) = {
 ```shell
 nomadcfg --spec myjob.jsonnet
 ```
+
+```json
+{
+  "Job": {
+    "ID": "biz-myjob",
+    "Name": "myjob",
+    "Namespace": "biz",
+    "Type": "service"
+  }
+}
+```
