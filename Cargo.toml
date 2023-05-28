@@ -8,9 +8,9 @@ license = "Apache-2.0"
 [dependencies]
 chrono = { version = "0.4", default-features = false, features = ["serde"] }
 clap = { version = "4.3", features = ["derive"] }
-jrsonnet-evaluator = { git = "https://github.com/CertainLach/jrsonnet", tag = "v0.5.0-pre9-test", features = ["exp-preserve-order"] }
-jrsonnet-parser = { git = "https://github.com/CertainLach/jrsonnet", tag = "v0.5.0-pre9-test" }
-jrsonnet-stdlib = { git = "https://github.com/CertainLach/jrsonnet", tag = "v0.5.0-pre9-test", features = ["exp-preserve-order"] }
+jrsonnet-evaluator = { version = "0.5.0-pre9", features = ["exp-preserve-order"] }
+jrsonnet-parser = { version = "0.5.0-pre9" }
+jrsonnet-stdlib = { version = "0.5.0-pre9", features = ["exp-preserve-order"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 serde_yaml = "0.9"
