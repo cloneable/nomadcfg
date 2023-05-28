@@ -2,6 +2,7 @@
 name = "serde_jrsonnet"
 version = "0.0.0"
 edition = "2021"
+authors = ["Folke B."]
 license = "Apache-2.0"
 
 [dependencies]

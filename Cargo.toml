@@ -1,5 +1,6 @@
 [workspace]
-members = ["jscfg", "examplebin", "nomadapi", "serde_jrsonnet", "nomadcfg"]
+members = ["nomadapi", "nomadcfg", "serde_jrsonnet"]
+default-members = ["nomadcfg"]
 
 [profile.release]
 opt-level = 3
