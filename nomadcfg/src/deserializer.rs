@@ -1,7 +1,4 @@
-pub mod error;
-
-use crate::error::{RcValPath, ValPathEntry};
-use error::{Error, Result};
+use crate::error::{Error, RcValPath, Result, ValPathEntry};
 use jrsonnet_evaluator::{
     val::{ArrValue, StrValue},
     ObjValue, ObjValueBuilder, Val,

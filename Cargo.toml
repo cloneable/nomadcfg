@@ -1,6 +1,5 @@
 [workspace]
-members = ["nomadcfg", "serde_jrsonnet"]
-default-members = ["nomadcfg"]
+members = ["nomadcfg"]
 
 [profile.release]
 opt-level = 3

@@ -1,3 +1,5 @@
+mod deserializer;
+mod error;
 mod nomadapi;
 
 use clap::{Parser, ValueEnum};
@@ -48,8 +50,7 @@ pub fn main() -> Result<(), Error> {
     let opts = Opts::parse();
 
     match run(opts) {
-        Err(Error::SerdeJrsonnet(serde_jrsonnet::error::Error::Evaluator(e)))
-        | Err(Error::Jrsonnet(e)) => {
+        Err(Error::SerdeJrsonnet(error::Error::Evaluator(e))) | Err(Error::Jrsonnet(e)) => {
             use jrsonnet_evaluator::trace::TraceFormat;
 
             let trace = Box::new(ExplainingFormat {
@@ -87,20 +88,20 @@ fn run(opts: Opts) -> Result<(), Error> {
                 let val: Val = job?;
                 if opts.unnested_job {
                     jobspecs.push(Jobspec {
-                        job: serde_jrsonnet::from_val(&val, opts.error_on_unknown_field)?,
+                        job: deserializer::from_val(&val, opts.error_on_unknown_field)?,
                     });
                 } else {
-                    jobspecs.push(serde_jrsonnet::from_val(&val, opts.error_on_unknown_field)?);
+                    jobspecs.push(deserializer::from_val(&val, opts.error_on_unknown_field)?);
                 }
             }
         }
         Val::Obj(_) => {
             if opts.unnested_job {
                 jobspecs.push(Jobspec {
-                    job: serde_jrsonnet::from_val(&val, opts.error_on_unknown_field)?,
+                    job: deserializer::from_val(&val, opts.error_on_unknown_field)?,
                 });
             } else {
-                jobspecs.push(serde_jrsonnet::from_val(&val, opts.error_on_unknown_field)?);
+                jobspecs.push(deserializer::from_val(&val, opts.error_on_unknown_field)?);
             }
         }
         _ => {
@@ -144,7 +145,7 @@ pub enum Error {
     Jrsonnet(#[from] jrsonnet_evaluator::Error),
 
     #[error("serde_jrsonnet error: {0}")]
-    SerdeJrsonnet(#[from] serde_jrsonnet::error::Error),
+    SerdeJrsonnet(#[from] error::Error),
 
     #[error("serde_json error: {0}")]
     SerdeJson(#[from] serde_json::Error),

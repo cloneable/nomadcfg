@@ -6,8 +6,6 @@ authors = ["Folke B."]
 license = "Apache-2.0"
 
 [dependencies]
-serde_jrsonnet = { path = "../serde_jrsonnet" }
-
 chrono = { version = "0.4", default-features = false, features = ["serde"] }
 clap = { version = "4.3", features = ["derive"] }
 jrsonnet-evaluator = { git = "https://github.com/CertainLach/jrsonnet", tag = "v0.5.0-pre9-test", features = ["exp-preserve-order"] }

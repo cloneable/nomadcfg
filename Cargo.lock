@@ -398,7 +398,6 @@ dependencies = [
  "jrsonnet-parser",
  "jrsonnet-stdlib",
  "serde",
- "serde_jrsonnet",
  "serde_json",
  "serde_yaml",
  "thiserror",
@@ -563,16 +562,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.16",
-]
-
-[[package]]
-name = "serde_jrsonnet"
-version = "0.0.0"
-dependencies = [
- "jrsonnet-evaluator",
- "jrsonnet-parser",
- "serde",
- "thiserror",
 ]
 
 [[package]]
