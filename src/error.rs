@@ -47,6 +47,9 @@ pub enum Error {
 
     #[error("{0}: invalid key field value: {1}")]
     InvalidKeyFieldValue(ValPath, ValType),
+
+    #[error("{0}: unimplemented: {1}")]
+    Unimplemented(ValPath, String),
 }
 
 impl ser::Error for Error {

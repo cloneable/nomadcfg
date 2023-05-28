@@ -55,7 +55,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 path: self.path.clone(),
                 fields: v.fields(true),
                 field_idx: 0,
-                val: &v,
+                val: v,
                 error_on_unknown_field: self.error_on_unknown_field,
             }),
             Val::Arr(v) => visitor.visit_seq(ArraySeq {
@@ -91,6 +91,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                     && *v <= i8::MAX as f64
                     && v.trunc() == *v =>
             {
+                #[allow(unsafe_code)]
                 let x = unsafe { v.to_int_unchecked::<i8>() };
                 visitor.visit_i8(x)
             }
@@ -117,6 +118,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                     && *v <= i16::MAX as f64
                     && v.trunc() == *v =>
             {
+                #[allow(unsafe_code)]
                 let x = unsafe { v.to_int_unchecked::<i16>() };
                 visitor.visit_i16(x)
             }
@@ -143,6 +145,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                     && *v <= i32::MAX as f64
                     && v.trunc() == *v =>
             {
+                #[allow(unsafe_code)]
                 let x = unsafe { v.to_int_unchecked::<i32>() };
                 visitor.visit_i32(x)
             }
@@ -169,6 +172,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                     && *v <= i64::MAX as f64
                     && v.trunc() == *v =>
             {
+                #[allow(unsafe_code)]
                 let x = unsafe { v.to_int_unchecked::<i64>() };
                 visitor.visit_i64(x)
             }
@@ -196,6 +200,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                         && *v <= i128::MAX as f64
                         && v.trunc() == *v =>
                 {
+                    #[allow(unsafe_code)]
                     let x = unsafe { v.to_int_unchecked::<i128>() };
                     visitor.visit_i128(x)
                 }
@@ -223,6 +228,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                     && *v <= u8::MAX as f64
                     && v.trunc() == *v =>
             {
+                #[allow(unsafe_code)]
                 let x = unsafe { v.to_int_unchecked::<u8>() };
                 visitor.visit_u8(x)
             }
@@ -249,6 +255,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                     && *v <= u16::MAX as f64
                     && v.trunc() == *v =>
             {
+                #[allow(unsafe_code)]
                 let x = unsafe { v.to_int_unchecked::<u16>() };
                 visitor.visit_u16(x)
             }
@@ -275,6 +282,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                     && *v <= u32::MAX as f64
                     && v.trunc() == *v =>
             {
+                #[allow(unsafe_code)]
                 let x = unsafe { v.to_int_unchecked::<u32>() };
                 visitor.visit_u32(x)
             }
@@ -301,6 +309,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                     && *v <= u64::MAX as f64
                     && v.trunc() == *v =>
             {
+                #[allow(unsafe_code)]
                 let x = unsafe { v.to_int_unchecked::<u64>() };
                 visitor.visit_u64(x)
             }
@@ -328,6 +337,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                         && *v <= u128::MAX as f64
                         && v.trunc() == *v =>
                 {
+                    #[allow(unsafe_code)]
                     let x = unsafe { v.to_int_unchecked::<u128>() };
                     visitor.visit_u128(x)
                 }
@@ -377,7 +387,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
         match self.val {
             Val::Str(v) if v.len() == 1 => {
                 // TODO: drop unwrap, more efficient
-                visitor.visit_char(v.to_string().chars().into_iter().next().unwrap())
+                visitor.visit_char(v.to_string().chars().next().unwrap())
             }
             _ => Err(Error::ExpectedStr(
                 self.path.entries(),
@@ -447,7 +457,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
         V: de::Visitor<'de>,
     {
         match self.val {
-            Val::Obj(v) if v.len() == 0 => visitor.visit_unit(),
+            Val::Obj(v) if v.is_empty() => visitor.visit_unit(),
             _ => Err(Error::ExpectedArr(
                 self.path.entries(),
                 self.val.value_type(),
@@ -460,7 +470,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
         V: de::Visitor<'de>,
     {
         match self.val {
-            Val::Obj(v) if v.len() == 0 => visitor.visit_unit(),
+            Val::Obj(v) if v.is_empty() => visitor.visit_unit(),
             _ => Err(Error::ExpectedArr(
                 self.path.entries(),
                 self.val.value_type(),
@@ -499,7 +509,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
             }),
             Val::Obj(v) => visitor.visit_seq(ArraySeq {
                 path: self.path.clone(),
-                val: &convert_object_to_array(&self.path, &v)?,
+                val: &convert_object_to_array(&self.path, v)?,
                 idx: 0,
                 error_on_unknown_field: self.error_on_unknown_field,
             }),
@@ -560,7 +570,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
                 path: self.path.clone(),
                 fields: v.fields(true),
                 field_idx: 0,
-                val: &v,
+                val: v,
                 error_on_unknown_field: self.error_on_unknown_field,
             }),
             _ => Err(Error::ExpectedObj(
@@ -603,7 +613,11 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
     where
         V: de::Visitor<'de>,
     {
-        todo!()
+        // TODO: support string+num enum variant lookup.
+        Err(Error::Unimplemented(
+            self.path.entries(),
+            "cannot handle enums yet".to_owned(),
+        ))
     }
 
     fn deserialize_identifier<V>(self, _visitor: V) -> Result<V::Value>
@@ -628,13 +642,13 @@ fn convert_object_to_array(path: &RcValPath, obj: &ObjValue) -> Result<ArrValue>
         None => None,
     };
 
-    Ok(ArrValue::from_iter(
-        obj.iter(true)
-            .filter(|(n, _)| n != KEY_FIELD_NAME)
-            .map(|(n, v)| (n, v, key_field.as_ref()))
-            .map(convert_field_to_value)
-            .filter_map(|v| v.ok()),
-    ))
+    Ok(obj
+        .iter(true)
+        .filter(|(n, _)| n != KEY_FIELD_NAME)
+        .map(|(n, v)| (n, v, key_field.as_ref()))
+        .map(convert_field_to_value)
+        .filter_map(|v| v.ok())
+        .collect())
 }
 
 fn convert_field_to_value(
