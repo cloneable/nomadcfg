@@ -28,14 +28,15 @@ myjob.jsonnet:
 
 ```jsonnet
 local job(name) = {
-  Type: 'service',
-  ID: '%s-%s' % [self.Namespace, self.Name],
-  Name: name,
-  Namespace: 'biz',
+  type: 'service',
+  id: '%s.%s' % [self.namespace, self.name],
+  name: name,
+  namespace: 'biz',
+  // ...
 };
 
 {
-  Job: job('myjob') {
+  job: job('myjob') {
     // job definition
   }
 
@@ -45,4 +46,15 @@ local job(name) = {
 
 ```shell
 nomadcfg --spec myjob.jsonnet
+```
+
+```json
+{
+  "Job": {
+    "ID": "biz-myjob",
+    "Name": "myjob",
+    "Namespace": "biz",
+    "Type": "service"
+  }
+}
 ```

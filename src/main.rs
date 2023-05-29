@@ -118,8 +118,8 @@ enum Format {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 struct Jobspec {
-    #[serde(rename = "Job")]
-    job: nomadapi::types::Job,
+    #[serde(rename(deserialize = "job", serialize = "Job"))]
+    job: nomadapi::Job,
 }
 
 pub fn main() -> Result<(), Error> {

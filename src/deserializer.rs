@@ -5,11 +5,11 @@ use jrsonnet_evaluator::{
 };
 use jrsonnet_parser::{IStr, Visibility};
 use serde::{
-    de::{self, value::StrDeserializer},
+    de::{self, value::StrDeserializer, IntoDeserializer},
     Deserialize,
 };
 
-const KEY_FIELD_NAME: &str = "$key";
+const BLOCK_LABEL_FIELD: &str = "@block-label@";
 
 pub struct Deserializer<'a> {
     path: RcValPath,
@@ -608,23 +608,26 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
         self,
         _name: &'static str,
         _variants: &'static [&'static str],
-        _visitor: V,
+        visitor: V,
     ) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        // TODO: support string+num enum variant lookup.
-        Err(Error::Unimplemented(
-            self.path.entries(),
-            "cannot handle enums yet".to_owned(),
-        ))
+        // TODO: obj -> struct variant, arr -> tuple variant
+        match self.val {
+            Val::Str(v) => visitor.visit_enum(v.to_string().into_deserializer()),
+            _ => Err(Error::ExpectedStr(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
+        }
     }
 
-    fn deserialize_identifier<V>(self, _visitor: V) -> Result<V::Value>
+    fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        Err(Error::IdentifierExpected(self.path.entries()))
+        self.deserialize_str(visitor)
     }
 
     fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value>
@@ -635,34 +638,22 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
     }
 }
 
-fn convert_object_to_array(path: &RcValPath, obj: &ObjValue) -> Result<ArrValue> {
-    let key_field = match obj.get(KEY_FIELD_NAME.into())? {
-        Some(Val::Str(key_field)) => Some(key_field),
-        Some(v) => return Err(Error::InvalidKeyFieldValue(path.entries(), v.value_type())),
-        None => None,
-    };
-
+fn convert_object_to_array(_path: &RcValPath, obj: &ObjValue) -> Result<ArrValue> {
     Ok(obj
         .iter(true)
-        .filter(|(n, _)| n != KEY_FIELD_NAME)
-        .map(|(n, v)| (n, v, key_field.as_ref()))
         .map(convert_field_to_value)
         .filter_map(|v| v.ok())
         .collect())
 }
 
 fn convert_field_to_value(
-    (name, value, key_field): (IStr, jrsonnet_evaluator::Result<Val>, Option<&StrValue>),
+    (name, value): (IStr, jrsonnet_evaluator::Result<Val>),
 ) -> jrsonnet_evaluator::Result<Val> {
     match value {
-        Ok(val @ Val::Obj(_)) => match key_field {
-            Some(key_name) => Ok(Val::Obj(merge_key_field_into_object(
-                &val.as_obj().unwrap(),
-                key_name,
-                name,
-            )?)),
-            None => Ok(val),
-        },
+        Ok(val @ Val::Obj(_)) => Ok(Val::Obj(merge_key_field_into_object(
+            &val.as_obj().unwrap(),
+            name,
+        )?)),
         Ok(val) => Ok(val),
         Err(err) => Err(err),
     }
@@ -670,12 +661,11 @@ fn convert_field_to_value(
 
 fn merge_key_field_into_object(
     obj: &ObjValue,
-    name: &StrValue,
     value: IStr,
 ) -> jrsonnet_evaluator::Result<ObjValue> {
     let mut b = ObjValueBuilder::new();
     b.with_super(obj.clone());
-    b.member(name.clone().into_flat())
+    b.member(BLOCK_LABEL_FIELD.into())
         .value(Val::Str(StrValue::Flat(value)))?;
     Ok(b.build())
 }
@@ -705,7 +695,7 @@ impl<'a, 'de: 'a> de::MapAccess<'de> for ObjValueMap<'a> {
                     return Err(Error::FieldNotVisible(self.path.entries(), key.to_owned()))
                 }
                 None => {
-                    if self.error_on_unknown_field {
+                    if self.error_on_unknown_field && key != BLOCK_LABEL_FIELD {
                         return Err(Error::FieldNotFound(self.path.entries(), key.to_owned()));
                     }
                     self.field_idx += 1;
