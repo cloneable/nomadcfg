@@ -12,7 +12,11 @@ pub struct Job {
     #[serde(rename(deserialize = "id", serialize = "ID"), default)]
     pub id: Option<String>,
 
-    #[serde(rename(deserialize = "name", serialize = "Name"), default)]
+    #[serde(
+        rename(deserialize = "name", serialize = "Name"),
+        alias = "@block-label@",
+        default
+    )]
     pub name: Option<String>,
 
     #[serde(rename(deserialize = "type", serialize = "Type"), default)]
@@ -308,7 +312,11 @@ pub struct TaskLifecycle {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Service {
-    #[serde(rename(deserialize = "name", serialize = "Name"), default)]
+    #[serde(
+        rename(deserialize = "name", serialize = "Name"),
+        alias = "@block-label@",
+        default
+    )]
     pub name: Option<String>,
 
     #[serde(rename(deserialize = "tags", serialize = "Tags"), default)]
@@ -371,7 +379,11 @@ pub struct Service {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ServiceCheck {
-    #[serde(rename(deserialize = "name", serialize = "Name"), default)]
+    #[serde(
+        rename(deserialize = "name", serialize = "Name"),
+        alias = "@block-label@",
+        default
+    )]
     pub name: Option<String>,
 
     #[serde(rename(deserialize = "type", serialize = "Type"), default)]
@@ -1034,7 +1046,11 @@ pub struct Template {
     #[serde(rename(deserialize = "source", serialize = "SourcePath"), default)]
     pub source: Option<String>,
 
-    #[serde(rename(deserialize = "destination", serialize = "DestPath"), default)]
+    #[serde(
+        rename(deserialize = "destination", serialize = "DestPath"),
+        alias = "@block-label@",
+        default
+    )]
     pub destination: Option<String>,
 
     #[serde(rename(deserialize = "data", serialize = "EmbeddedTmpl"), default)]

@@ -80,7 +80,7 @@ type Visitor interface {
 	visitPointer(t reflect.Type) error
 	visitSlice(t reflect.Type) error
 	visitStruct(t reflect.Type) error
-	visitStructField(index int, t reflect.StructField) error
+	visitStructField(st reflect.Type, index int, ft reflect.StructField) error
 }
 
 type TypeTracker map[string]bool
@@ -114,7 +114,7 @@ func (g *CodeGenerator) visitStruct(t reflect.Type) error {
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
-		if err := g.visitStructField(i, field); err != nil {
+		if err := g.visitStructField(t, i, field); err != nil {
 			return err
 		}
 	}
@@ -141,8 +141,15 @@ type tagAttrs struct {
 	block      bool
 }
 
-func (g *CodeGenerator) visitStructField(i int, f reflect.StructField) error {
-	if value, ok := f.Tag.Lookup("hcl"); ok {
+var extraLabelFields = map[string]string{
+	"Job":          "Name", // TODO: or ID?
+	"Template":     "DestPath",
+	"Service":      "Name",
+	"ServiceCheck": "Name",
+}
+
+func (g *CodeGenerator) visitStructField(st reflect.Type, i int, ft reflect.StructField) error {
+	if value, ok := ft.Tag.Lookup("hcl"); ok {
 		values := strings.Split(value, ",")
 		attrs := tagAttrs{
 			configName: values[0],
@@ -160,11 +167,15 @@ func (g *CodeGenerator) visitStructField(i int, f reflect.StructField) error {
 			}
 		}
 
-		if err := g.emitStructField(f, attrs); err != nil {
+		if labelName, found := extraLabelFields[st.Name()]; found && ft.Name == labelName {
+			attrs.label = true
+		}
+
+		if err := g.emitStructField(ft, attrs); err != nil {
 			return err
 		}
 
-		g.toVisit = append(g.toVisit, f.Type)
+		g.toVisit = append(g.toVisit, ft.Type)
 	}
 	return nil
 }
