@@ -5,7 +5,7 @@ use jrsonnet_evaluator::{
 };
 use jrsonnet_parser::{IStr, Visibility};
 use serde::{
-    de::{self, value::StrDeserializer},
+    de::{self, value::StrDeserializer, IntoDeserializer},
     Deserialize,
 };
 
@@ -608,23 +608,26 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
         self,
         _name: &'static str,
         _variants: &'static [&'static str],
-        _visitor: V,
+        visitor: V,
     ) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        // TODO: support string+num enum variant lookup.
-        Err(Error::Unimplemented(
-            self.path.entries(),
-            "cannot handle enums yet".to_owned(),
-        ))
+        // TODO: obj -> struct variant, arr -> tuple variant
+        match self.val {
+            Val::Str(v) => visitor.visit_enum(v.to_string().into_deserializer()),
+            _ => Err(Error::ExpectedStr(
+                self.path.entries(),
+                self.val.value_type(),
+            )),
+        }
     }
 
-    fn deserialize_identifier<V>(self, _visitor: V) -> Result<V::Value>
+    fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        Err(Error::IdentifierExpected(self.path.entries()))
+        self.deserialize_str(visitor)
     }
 
     fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value>
