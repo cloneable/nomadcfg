@@ -223,6 +223,7 @@ func (g *CodeGenerator) emitFileEnd() error {
 func (g *CodeGenerator) emitStructStart(name string) error {
 	_, err := fmt.Fprintf(g.output, `
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct %s {
 `, name)
 	return err
@@ -322,8 +323,7 @@ func (g *CodeGenerator) emitStructField(f reflect.StructField, attrs tagAttrs) e
 		aliasAttr = `, alias = "@block-label@"`
 	}
 
-	_, err := fmt.Fprintf(g.output, `
-    #[serde(rename(deserialize = %q, serialize = %q)%s, default)]
+	_, err := fmt.Fprintf(g.output, `    #[serde(rename(deserialize = %q, serialize = %q)%s, default)]
     pub %s: %s,
 `, deserName, serName, aliasAttr, fieldName, rustType)
 	return err
