@@ -108,7 +108,11 @@ pub struct Affinity {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct TaskGroup {
-    #[serde(rename(deserialize = "name", serialize = "Name"), default)]
+    #[serde(
+        rename(deserialize = "name", serialize = "Name"),
+        alias = "@block-label@",
+        default
+    )]
     pub name: String,
 
     #[serde(rename(deserialize = "count", serialize = "Count"), default)]
@@ -192,7 +196,11 @@ pub struct TaskGroup {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Task {
-    #[serde(rename(deserialize = "name", serialize = "Name"), default)]
+    #[serde(
+        rename(deserialize = "name", serialize = "Name"),
+        alias = "@block-label@",
+        default
+    )]
     pub name: String,
 
     #[serde(rename(deserialize = "driver", serialize = "Driver"), default)]
@@ -570,7 +578,11 @@ pub struct ConsulGatewayProxy {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ConsulGatewayBindAddress {
-    #[serde(rename(deserialize = "name", serialize = "Name"), default)]
+    #[serde(
+        rename(deserialize = "name", serialize = "Name"),
+        alias = "@block-label@",
+        default
+    )]
     pub name: String,
 
     #[serde(rename(deserialize = "address", serialize = "Address"), default)]
@@ -903,7 +915,11 @@ pub struct DNSConfig {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Port {
-    #[serde(rename(deserialize = "label", serialize = "Label"), default)]
+    #[serde(
+        rename(deserialize = "label", serialize = "Label"),
+        alias = "@block-label@",
+        default
+    )]
     pub label: String,
 
     #[serde(rename(deserialize = "static", serialize = "Value"), default)]
@@ -921,7 +937,11 @@ pub struct Port {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct RequestedDevice {
-    #[serde(rename(deserialize = "name", serialize = "Name"), default)]
+    #[serde(
+        rename(deserialize = "name", serialize = "Name"),
+        alias = "@block-label@",
+        default
+    )]
     pub name: String,
 
     #[serde(rename(deserialize = "count", serialize = "Count"), default)]
@@ -1197,7 +1217,11 @@ pub struct Spread {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SpreadTarget {
-    #[serde(rename(deserialize = "value", serialize = "Value"), default)]
+    #[serde(
+        rename(deserialize = "value", serialize = "Value"),
+        alias = "@block-label@",
+        default
+    )]
     pub value: String,
 
     #[serde(rename(deserialize = "percent", serialize = "Percent"), default)]
@@ -1206,7 +1230,11 @@ pub struct SpreadTarget {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct VolumeRequest {
-    #[serde(rename(deserialize = "name", serialize = "Name"), default)]
+    #[serde(
+        rename(deserialize = "name", serialize = "Name"),
+        alias = "@block-label@",
+        default
+    )]
     pub name: String,
 
     #[serde(rename(deserialize = "type", serialize = "Type"), default)]
@@ -1386,7 +1414,11 @@ pub struct MultiregionStrategy {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct MultiregionRegion {
-    #[serde(rename(deserialize = "name", serialize = "Name"), default)]
+    #[serde(
+        rename(deserialize = "name", serialize = "Name"),
+        alias = "@block-label@",
+        default
+    )]
     pub name: String,
 
     #[serde(rename(deserialize = "count", serialize = "Count"), default)]

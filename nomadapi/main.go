@@ -300,9 +300,14 @@ func (g *CodeGenerator) emitStructField(f reflect.StructField, attrs tagAttrs) e
 		rustType = "Option<" + rustType + ">"
 	}
 
+	aliasAttr := ""
+	if attrs.label {
+		aliasAttr = `, alias = "@block-label@"`
+	}
+
 	_, err := fmt.Fprintf(g.output, `
-    #[serde(rename(deserialize = %q, serialize = %q), default)]
+    #[serde(rename(deserialize = %q, serialize = %q)%s, default)]
     pub %s: %s,
-`, deserName, serName, fieldName, rustType)
+`, deserName, serName, aliasAttr, fieldName, rustType)
 	return err
 }
