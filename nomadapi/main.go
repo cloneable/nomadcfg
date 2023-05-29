@@ -123,6 +123,17 @@ func (g *CodeGenerator) visitStruct(t reflect.Type) error {
 		return err
 	}
 
+	// TODO: impl Default from canonicalized values
+	// v := reflect.New(t)
+	// switch i := v.Interface().(type) {
+	// case interface{ Canonicalize() }:
+	// 	i.Canonicalize()
+	// 	v = v.Elem() // deref
+	// 	for i := 0; i < v.NumField(); i++ {
+	// 		field := v.Field(i)
+	// 	}
+	// }
+
 	var toVisit []reflect.Type
 	toVisit, g.toVisit = g.toVisit, nil
 
