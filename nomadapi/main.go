@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/iancoleman/strcase"
+
 	// v1.5.6: go get github.com/hashicorp/nomad/api@8af70885c02ab921dedbdf6bc406a1e886866f80
 	"github.com/hashicorp/nomad/api"
 )
@@ -103,14 +105,20 @@ func (g *CodeGenerator) visitStruct(t reflect.Type) error {
 		return nil
 	}
 	g.tracker.add(t.Name())
-	if _, err := fmt.Fprintf(g.output, "%s\n", t.Name()); err != nil {
+
+	if err := g.emitStructStart(t.Name()); err != nil {
 		return err
 	}
+
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		if err := g.visitStructField(i, field); err != nil {
 			return err
 		}
+	}
+
+	if err := g.emitStructEnd(); err != nil {
+		return err
 	}
 
 	var toVisit []reflect.Type
@@ -124,12 +132,36 @@ func (g *CodeGenerator) visitStruct(t reflect.Type) error {
 	return nil
 }
 
+type tagAttrs struct {
+	configName string
+	label      bool
+	optional   bool
+	block      bool
+}
+
 func (g *CodeGenerator) visitStructField(i int, f reflect.StructField) error {
 	if value, ok := f.Tag.Lookup("hcl"); ok {
 		values := strings.Split(value, ",")
-		if _, err := fmt.Fprintf(g.output, "  %s: %v\n", f.Name, values); err != nil {
+		attrs := tagAttrs{
+			configName: values[0],
+		}
+		for _, attr := range values[1:] {
+			switch attr {
+			case "label":
+				attrs.label = true
+			case "optional":
+				attrs.optional = true
+			case "block":
+				attrs.block = true
+			default:
+				return fmt.Errorf("unknown tag attribute: %s", attr)
+			}
+		}
+
+		if err := g.emitStructField(f.Name, attrs); err != nil {
 			return err
 		}
+
 		g.toVisit = append(g.toVisit, f.Type)
 	}
 	return nil
@@ -156,4 +188,35 @@ func (g *CodeGenerator) visitSlice(t reflect.Type) error {
 
 func (g *CodeGenerator) visitArray(t reflect.Type) error {
 	return (&TypeWalker{t: t.Elem()}).acceptVisitor(g)
+}
+
+func (g *CodeGenerator) emitStructStart(name string) error {
+	_, err := fmt.Fprintf(g.output, `#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+pub struct %s {
+`, name)
+	return err
+}
+
+func (g *CodeGenerator) emitStructEnd() error {
+	_, err := fmt.Fprintf(g.output, "}\n\n")
+	return err
+}
+
+func (g *CodeGenerator) emitStructField(name string, attrs tagAttrs) error {
+	fieldName := attrs.configName
+	if fieldName == "" {
+		fieldName = strcase.ToSnake(name)
+	}
+	serName := name
+	deserName := fieldName
+
+	switch fieldName {
+	case "type", "static":
+		fieldName = "r#" + fieldName
+	}
+
+	_, err := fmt.Fprintf(g.output, `  #[serde(rename(deserialize = %q, serialize = %q), default)]
+  pub %s: Option<u8>,
+`, deserName, serName, fieldName)
+	return err
 }
