@@ -18,10 +18,12 @@ func main() {
 	job := reflect.TypeOf(api.Job{})
 	w := TypeWalker{t: job}
 	cg := CodeGenerator{tracker: make(TypeTracker), output: os.Stdout}
+	cg.emitFileStart()
 	if err := w.acceptVisitor(&cg); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+	cg.emitFileEnd()
 }
 
 type TypeWalker struct {
@@ -158,7 +160,7 @@ func (g *CodeGenerator) visitStructField(i int, f reflect.StructField) error {
 			}
 		}
 
-		if err := g.emitStructField(f.Name, attrs); err != nil {
+		if err := g.emitStructField(f, attrs); err != nil {
 			return err
 		}
 
@@ -190,33 +192,117 @@ func (g *CodeGenerator) visitArray(t reflect.Type) error {
 	return (&TypeWalker{t: t.Elem()}).acceptVisitor(g)
 }
 
+func (g *CodeGenerator) emitFileStart() error {
+	_, err := fmt.Fprintf(g.output, `use indexmap::IndexMap;
+use serde::{Deserialize, Serialize};
+`)
+	return err
+}
+
+func (g *CodeGenerator) emitFileEnd() error {
+	return nil
+}
+
 func (g *CodeGenerator) emitStructStart(name string) error {
-	_, err := fmt.Fprintf(g.output, `#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+	_, err := fmt.Fprintf(g.output, `
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct %s {
 `, name)
 	return err
 }
 
 func (g *CodeGenerator) emitStructEnd() error {
-	_, err := fmt.Fprintf(g.output, "}\n\n")
+	_, err := fmt.Fprintf(g.output, "}\n")
 	return err
 }
 
-func (g *CodeGenerator) emitStructField(name string, attrs tagAttrs) error {
+func (g *CodeGenerator) emitStructField(f reflect.StructField, attrs tagAttrs) error {
 	fieldName := attrs.configName
 	if fieldName == "" {
-		fieldName = strcase.ToSnake(name)
+		fieldName = strcase.ToSnake(f.Name)
 	}
-	serName := name
+	serName := f.Name
 	deserName := fieldName
-
 	switch fieldName {
 	case "type", "static":
 		fieldName = "r#" + fieldName
 	}
 
-	_, err := fmt.Fprintf(g.output, `  #[serde(rename(deserialize = %q, serialize = %q), default)]
-  pub %s: Option<u8>,
-`, deserName, serName, fieldName)
+	t := f.Type
+	repeated := false
+	if t.Kind() == reflect.Slice {
+		repeated = true
+		t = t.Elem()
+	}
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	isMap := false
+	rustType := "()"
+	switch t.Kind() {
+	case reflect.Bool:
+		rustType = "bool"
+	case reflect.Int:
+		rustType = "isize"
+	case reflect.Int8:
+		rustType = "i8"
+	case reflect.Int16:
+		rustType = "i16"
+	case reflect.Int32:
+		rustType = "i32"
+	case reflect.Int64:
+		rustType = "i64"
+	case reflect.Uint:
+		rustType = "usize"
+	case reflect.Uint8:
+		rustType = "u8"
+	case reflect.Uint16:
+		rustType = "u16"
+	case reflect.Uint32:
+		rustType = "u32"
+	case reflect.Uint64:
+		rustType = "u64"
+	case reflect.Float32:
+		rustType = "f32"
+	case reflect.Float64:
+		rustType = "f64"
+	case reflect.Map:
+		isMap = true
+		if t.Elem().Kind() == reflect.Interface {
+			rustType = "serde_json::Value"
+		} else if t.Elem().Kind() == reflect.String {
+			rustType = "String"
+		} else if t.Elem().Kind() == reflect.Pointer && t.Elem().Elem().Kind() == reflect.Struct {
+			rustType = t.Elem().Elem().Name()
+		} else if t.Elem().Kind() == reflect.Slice && t.Elem().Elem().Kind() == reflect.String { // TODO: more flexible
+			repeated = true
+			rustType = "String"
+		} else {
+			// rustType = "()"
+			return fmt.Errorf("unexpected map value type: %v", t.Elem())
+		}
+	case reflect.String:
+		rustType = "String"
+	case reflect.Struct:
+		rustType = t.Name()
+	default:
+		return fmt.Errorf("unexpected field type: %v", t)
+	}
+
+	if repeated {
+		rustType = "Vec<" + rustType + ">"
+	}
+	if isMap {
+		rustType = "IndexMap<String, " + rustType + ">"
+	}
+	if attrs.optional || attrs.block {
+		rustType = "Option<" + rustType + ">"
+	}
+
+	_, err := fmt.Fprintf(g.output, `
+    #[serde(rename(deserialize = %q, serialize = %q), default)]
+    pub %s: %s,
+`, deserName, serName, fieldName, rustType)
 	return err
 }
