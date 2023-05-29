@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -27,40 +28,50 @@ type TypeWalker struct {
 func (w *TypeWalker) acceptVisitor(v Visitor) error {
 	switch w.t.Kind() {
 	case reflect.Bool:
+		return nil // TODO
 	case reflect.Int:
+		return nil // TODO
 	case reflect.Int8:
+		return nil // TODO
 	case reflect.Int16:
+		return nil // TODO
 	case reflect.Int32:
+		return nil // TODO
 	case reflect.Int64:
+		return nil // TODO
 	case reflect.Uint:
+		return nil // TODO
 	case reflect.Uint8:
+		return nil // TODO
 	case reflect.Uint16:
+		return nil // TODO
 	case reflect.Uint32:
+		return nil // TODO
 	case reflect.Uint64:
-	case reflect.Uintptr:
+		return nil // TODO
 	case reflect.Float32:
+		return nil // TODO
 	case reflect.Float64:
-	case reflect.Complex64:
-	case reflect.Complex128:
+		return nil // TODO
 	case reflect.Array:
-	case reflect.Chan:
-	case reflect.Func:
-	case reflect.Interface:
+		return v.visitArray(w.t)
 	case reflect.Map:
+		return v.visitMap(w.t)
 	case reflect.Pointer:
 		return v.visitPointer(w.t)
 	case reflect.Slice:
 		return v.visitSlice(w.t)
 	case reflect.String:
+		return nil // TODO
 	case reflect.Struct:
 		return v.visitStruct(w.t)
-	case reflect.UnsafePointer:
 	}
-	// return fmt.Errorf("cannot handle type: %v", w.t)
-	return nil
+	return fmt.Errorf("unexpected type: %v [%s]", w.t, w.t.Name())
 }
 
 type Visitor interface {
+	visitArray(t reflect.Type) error
+	visitMap(t reflect.Type) error
 	visitPointer(t reflect.Type) error
 	visitSlice(t reflect.Type) error
 	visitStruct(t reflect.Type) error
@@ -109,10 +120,25 @@ func (g *CodeGenerator) visitStructField(i int, f reflect.StructField) error {
 	return nil
 }
 
+func (g *CodeGenerator) visitMap(t reflect.Type) error {
+	if t.Key().Kind() != reflect.String {
+		return errors.New("map key must be string")
+	}
+	if t.Elem().Kind() == reflect.Interface && t.Name() == "" {
+		// TODO: JSON value
+		return nil
+	}
+	return (&TypeWalker{t: t.Elem()}).acceptVisitor(g)
+}
+
 func (g *CodeGenerator) visitPointer(t reflect.Type) error {
 	return (&TypeWalker{t: t.Elem()}).acceptVisitor(g)
 }
 
 func (g *CodeGenerator) visitSlice(t reflect.Type) error {
+	return (&TypeWalker{t: t.Elem()}).acceptVisitor(g)
+}
+
+func (g *CodeGenerator) visitArray(t reflect.Type) error {
 	return (&TypeWalker{t: t.Elem()}).acceptVisitor(g)
 }
