@@ -2,7 +2,7 @@ module github.com/cloneable/nomadcfg/nomadapi
 
 go 1.20
 
-require github.com/hashicorp/nomad/api v0.0.0-20230525211113-087ac3a0f203
+require github.com/hashicorp/nomad/api v0.0.0-20230519182613-8af70885c02a
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

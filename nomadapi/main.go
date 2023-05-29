@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 
+	// v1.5.6: go get github.com/hashicorp/nomad/api@8af70885c02ab921dedbdf6bc406a1e886866f80
 	"github.com/hashicorp/nomad/api"
 )
 
