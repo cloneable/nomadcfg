@@ -8,7 +8,7 @@ license = "Apache-2.0"
 repository = "https://github.com/cloneable/nomadcfg"
 categories = ["command-line-utilities"]
 keywords = ["nomad", "jsonnet"]
-exclude = [".gitignore", ".github", "deny.toml", "target"]
+exclude = [".gitignore", ".github", "nomadapi", "deny.toml", "target"]
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
