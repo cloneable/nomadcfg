@@ -82,26 +82,42 @@ type Visitor interface {
 type TypeTracker map[string]bool
 
 func (t TypeTracker) seen(name string) bool {
-	_, found := t[name]
-	return found
+	return t[name]
 }
 
-func (t TypeTracker) generated(name string) bool {
-	return t[name]
+func (t TypeTracker) add(name string) {
+	if t == nil {
+		t = make(TypeTracker)
+	}
+	t[name] = true
 }
 
 type CodeGenerator struct {
 	tracker TypeTracker
 	output  io.Writer
+	toVisit []reflect.Type
 }
 
 func (g *CodeGenerator) visitStruct(t reflect.Type) error {
+	if g.tracker.seen(t.Name()) {
+		return nil
+	}
+	g.tracker.add(t.Name())
 	if _, err := fmt.Fprintf(g.output, "%s\n", t.Name()); err != nil {
 		return err
 	}
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		if err := g.visitStructField(i, field); err != nil {
+			return err
+		}
+	}
+
+	var toVisit []reflect.Type
+	toVisit, g.toVisit = g.toVisit, nil
+
+	for _, t := range toVisit {
+		if err := (&TypeWalker{t: t}).acceptVisitor(g); err != nil {
 			return err
 		}
 	}
@@ -114,9 +130,7 @@ func (g *CodeGenerator) visitStructField(i int, f reflect.StructField) error {
 		if _, err := fmt.Fprintf(g.output, "  %s: %v\n", f.Name, values); err != nil {
 			return err
 		}
-		if err := (&TypeWalker{t: f.Type}).acceptVisitor(g); err != nil {
-			return err
-		}
+		g.toVisit = append(g.toVisit, f.Type)
 	}
 	return nil
 }
