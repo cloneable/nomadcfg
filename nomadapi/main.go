@@ -171,6 +171,12 @@ func (g *CodeGenerator) visitStructField(st reflect.Type, i int, ft reflect.Stru
 			attrs.label = true
 		}
 
+		if st.Name() == "ConsulGatewayBindAddress" && ft.Name == "Name" {
+			// TODO: deal with label fields in maps
+			attrs.label = false
+			attrs.optional = true
+		}
+
 		if err := g.emitStructField(ft, attrs); err != nil {
 			return err
 		}

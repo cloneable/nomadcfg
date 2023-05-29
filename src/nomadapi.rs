@@ -590,12 +590,8 @@ pub struct ConsulGatewayProxy {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ConsulGatewayBindAddress {
-    #[serde(
-        rename(deserialize = "name", serialize = "Name"),
-        alias = "@block-label@",
-        default
-    )]
-    pub name: String,
+    #[serde(rename(deserialize = "name", serialize = "Name"), default)]
+    pub name: Option<String>,
 
     #[serde(rename(deserialize = "address", serialize = "Address"), default)]
     pub address: Option<String>,
