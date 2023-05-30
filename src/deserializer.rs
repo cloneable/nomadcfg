@@ -690,7 +690,29 @@ impl<'a, 'de: 'a> de::MapAccess<'de> for ObjValueMap<'a> {
                 return Ok(None);
             }
             let key = self.fields[self.field_idx];
+
+            if key == BLOCK_LABEL_FIELD {
+                // The next field is the aliased field. If set, skip block label field.
+                // TODO: add test for this serde behavior.
+                let label_field = self.fields[self.field_idx + 1];
+                match self.val.get(label_field.into())? {
+                    None | Some(Val::Null) => {}
+                    Some(_) => {
+                        self.field_idx += 1;
+                        continue;
+                    }
+                }
+            }
+
+            // skip fields evaluated to null for convenience.
+            // TODO: check for unexpected side effects.
+            if let Some(Val::Null) = self.val.get(key.into())? {
+                self.field_idx += 1;
+                continue;
+            }
+
             match self.val.field_visibility(key.into()) {
+                Some(Visibility::Normal | Visibility::Unhide) => break key,
                 Some(Visibility::Hidden) => {
                     return Err(Error::FieldNotVisible(self.path.entries(), key.to_owned()))
                 }
@@ -700,7 +722,6 @@ impl<'a, 'de: 'a> de::MapAccess<'de> for ObjValueMap<'a> {
                     }
                     self.field_idx += 1;
                 }
-                _ => break key,
             }
         };
         seed.deserialize(StrDeserializer::new(key)).map(Some)
