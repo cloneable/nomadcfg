@@ -12,7 +12,7 @@ pub struct Job {
     pub id: Option<String>,
     #[serde(
         rename(deserialize = "name", serialize = "Name"),
-        alias = "@block-label@",
+        alias = "__label__",
         default
     )]
     pub name: Option<String>,
@@ -93,7 +93,7 @@ pub struct Affinity {
 pub struct TaskGroup {
     #[serde(
         rename(deserialize = "name", serialize = "Name"),
-        alias = "@block-label@",
+        alias = "__label__",
         default
     )]
     pub name: String,
@@ -163,7 +163,7 @@ pub struct TaskGroup {
 pub struct Task {
     #[serde(
         rename(deserialize = "name", serialize = "Name"),
-        alias = "@block-label@",
+        alias = "__label__",
         default
     )]
     pub name: String,
@@ -251,7 +251,7 @@ pub struct TaskLifecycle {
 pub struct Service {
     #[serde(
         rename(deserialize = "name", serialize = "Name"),
-        alias = "@block-label@",
+        alias = "__label__",
         default
     )]
     pub name: Option<String>,
@@ -304,7 +304,7 @@ pub struct Service {
 pub struct ServiceCheck {
     #[serde(
         rename(deserialize = "name", serialize = "Name"),
-        alias = "@block-label@",
+        alias = "__label__",
         default
     )]
     pub name: Option<String>,
@@ -778,7 +778,7 @@ pub struct DNSConfig {
 pub struct Port {
     #[serde(
         rename(deserialize = "label", serialize = "Label"),
-        alias = "@block-label@",
+        alias = "__label__",
         default
     )]
     pub label: String,
@@ -798,7 +798,7 @@ pub struct Port {
 pub struct RequestedDevice {
     #[serde(
         rename(deserialize = "name", serialize = "Name"),
-        alias = "@block-label@",
+        alias = "__label__",
         default
     )]
     pub name: String,
@@ -882,7 +882,7 @@ pub struct Template {
     pub source: Option<String>,
     #[serde(
         rename(deserialize = "destination", serialize = "DestPath"),
-        alias = "@block-label@",
+        alias = "__label__",
         default
     )]
     pub destination: Option<String>,
@@ -1046,7 +1046,7 @@ pub struct Spread {
 pub struct SpreadTarget {
     #[serde(
         rename(deserialize = "value", serialize = "Value"),
-        alias = "@block-label@",
+        alias = "__label__",
         default
     )]
     pub value: String,
@@ -1059,7 +1059,7 @@ pub struct SpreadTarget {
 pub struct VolumeRequest {
     #[serde(
         rename(deserialize = "name", serialize = "Name"),
-        alias = "@block-label@",
+        alias = "__label__",
         default
     )]
     pub name: String,
@@ -1224,7 +1224,7 @@ pub struct MultiregionStrategy {
 pub struct MultiregionRegion {
     #[serde(
         rename(deserialize = "name", serialize = "Name"),
-        alias = "@block-label@",
+        alias = "__label__",
         default
     )]
     pub name: String,

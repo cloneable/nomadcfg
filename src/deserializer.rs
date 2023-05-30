@@ -9,7 +9,7 @@ use serde::{
     Deserialize,
 };
 
-const BLOCK_LABEL_FIELD: &str = "@block-label@";
+const BLOCK_LABEL_FIELD: &str = "__label__";
 
 pub struct Deserializer<'a> {
     path: RcValPath,

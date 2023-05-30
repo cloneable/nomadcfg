@@ -331,7 +331,7 @@ func (g *CodeGenerator) emitStructField(f reflect.StructField, attrs tagAttrs) e
 
 	aliasAttr := ""
 	if attrs.label {
-		aliasAttr = `, alias = "@block-label@"`
+		aliasAttr = `, alias = "__label__"`
 	}
 
 	_, err := fmt.Fprintf(g.output, `    #[serde(rename(deserialize = %q, serialize = %q)%s, default)]
