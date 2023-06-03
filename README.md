@@ -27,16 +27,16 @@ cargo install --git https://github.com/cloneable/nomadcfg
 myjob.jsonnet:
 
 ```jsonnet
-local job(name) = {
+local job(name, namespace='default') = {
   type: 'service',
-  id: '%s.%s' % [self.namespace, self.name],
+  id: self.name,
   name: name,
-  namespace: 'biz',
+  namespace: namespace,
   // ...
 };
 
 {
-  job: job('myjob') {
+  job: job('myjob', 'biz') {
     // job definition
   }
 
@@ -45,13 +45,13 @@ local job(name) = {
 ```
 
 ```shell
-nomadcfg --spec myjob.jsonnet
+nomadcfg print myjob.jsonnet
 ```
 
 ```json
 {
   "Job": {
-    "ID": "biz-myjob",
+    "ID": "myjob",
     "Name": "myjob",
     "Namespace": "biz",
     "Type": "service"
