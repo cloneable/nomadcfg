@@ -87,49 +87,112 @@ use jrsonnet_stdlib::ContextInitializer;
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, process};
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct RootArgs {
     #[command(subcommand)]
     command: Command,
 }
 
-#[derive(Subcommand)]
+#[allow(clippy::large_enum_variant)]
+#[derive(Subcommand, Debug)]
 enum Command {
     Print(PrintArgs),
+    Diff(DiffArgs),
 }
 
-#[derive(Args)]
+#[derive(Args, Debug)]
 struct Input {
-    config: PathBuf,
-
-    #[arg(long, value_name = "JOB ID")]
+    #[arg(long, value_name = "JOB_ID")]
     job_id: Option<String>,
 
-    #[arg(long, default_value = "latest", value_name = "TAG")]
-    imagetag: String,
+    #[arg(long, value_name = "TAG")]
+    imagetag: Option<String>,
 
     #[arg(long)]
     error_on_unknown_field: bool,
 
     #[arg(long)]
     unnested_job: bool,
+
+    config: PathBuf,
 }
 
-#[derive(Args)]
+#[derive(Args, Debug)]
 struct PrintArgs {
-    #[command(flatten)]
-    input: Input,
-
     #[arg(long, value_enum, rename_all = "lower", default_value_t = Format::Json)]
     format: Format,
+
+    #[command(flatten)]
+    input: Input,
 }
 
-#[derive(Clone, ValueEnum)]
+#[derive(Clone, ValueEnum, Debug)]
 enum Format {
     Json,
     Yaml,
     Toml,
+}
+
+#[derive(Args, Debug)]
+struct DiffArgs {
+    #[command(flatten)]
+    nomad: NomadArgs,
+
+    #[command(flatten)]
+    input: Input,
+}
+
+#[derive(Args, Debug)]
+struct NomadArgs {
+    #[arg(
+        long,
+        env = "NOMAD_ADDR",
+        default_value = "http://127.0.0.1:4646",
+        value_name = "URL"
+    )]
+    address: Option<String>,
+
+    #[arg(long, env = "NOMAD_CACERT", value_name = "PATH")]
+    ca_cert: Option<PathBuf>,
+
+    #[arg(long, env = "NOMAD_CAPATH", value_name = "PATH")]
+    ca_path: Option<PathBuf>,
+
+    #[arg(long, env = "NOMAD_CLIENT_CERT", value_name = "PATH")]
+    client_cert: Option<PathBuf>,
+
+    #[arg(long, env = "NOMAD_CLIENT_KEY", value_name = "PATH")]
+    client_key: Option<PathBuf>,
+
+    #[arg(long, env = "NOMAD_TLS_SERVER_NAME", value_name = "SERVER_NAME")]
+    tls_server_name: Option<String>,
+
+    #[arg(long, env = "NOMAD_SKIP_VERIFY")]
+    tls_skip_verify: bool,
+
+    #[arg(long, env = "NOMAD_REGION", value_name = "REGION")]
+    region: Option<String>,
+
+    #[arg(
+        long,
+        env = "NOMAD_NAMESPACE",
+        default_value = "default",
+        value_name = "NAMESPACE"
+    )]
+    namespace: Option<String>,
+
+    #[arg(long, env = "NOMAD_TOKEN", value_name = "TOKEN")]
+    token: Option<String>,
+
+    #[arg(long, env = "VAULT_TOKEN", value_name = "TOKEN")]
+    vault_token: Option<String>,
+
+    #[arg(long, value_name = "NAMESPACE")]
+    vault_namespace: Option<String>,
+
+    #[arg(long, env = "CONSUL_HTTP_TOKEN", value_name = "TOKEN")]
+    consul_token: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -157,6 +220,13 @@ pub fn main() -> Result<(), Error> {
             }
             r => r,
         },
+        Command::Diff(_diff_args) => {
+            // TODO: eval local config
+            // TODO: fetch live config
+            // TODO: canonicalize
+            // TODO: compare configs
+            Ok(())
+        }
     }
 }
 
@@ -165,7 +235,9 @@ fn print(args: &PrintArgs) -> Result<(), Error> {
     state.set_import_resolver(FileImportResolver::default());
 
     let ctx = ContextInitializer::new(state.clone(), PathResolver::new_cwd_fallback());
-    ctx.add_ext_str("imagetag".into(), args.input.imagetag.clone().into());
+    if let Some(ref imagetag) = args.input.imagetag {
+        ctx.add_ext_str("imagetag".into(), imagetag.into());
+    }
     state.set_context_initializer(ctx);
 
     // let mut tla = GcHashMap::<IStr, IStr>::new();

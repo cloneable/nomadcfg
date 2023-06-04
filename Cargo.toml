@@ -11,7 +11,7 @@ keywords = ["nomad", "jsonnet"]
 exclude = [".gitignore", ".github", "nomadapi", "deny.toml", "target"]
 
 [dependencies]
-clap = { version = "4", features = ["derive"] }
+clap = { version = "4", features = ["derive", "env"] }
 indexmap = { version = "1", features = ["serde"] }
 jrsonnet-evaluator = { version = "0.5.0-pre9", features = ["exp-preserve-order"] }
 jrsonnet-parser = { version = "0.5.0-pre9" }
