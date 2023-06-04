@@ -85,7 +85,7 @@ use jrsonnet_evaluator::{
 };
 use jrsonnet_stdlib::ContextInitializer;
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, process};
+use std::{path::PathBuf, process, time::Duration};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -220,13 +220,7 @@ pub fn main() -> Result<(), Error> {
             }
             r => r,
         },
-        Command::Diff(_diff_args) => {
-            // TODO: eval local config
-            // TODO: fetch live config
-            // TODO: canonicalize
-            // TODO: compare configs
-            Ok(())
-        }
+        Command::Diff(diff_args) => diff(&diff_args),
     }
 }
 
@@ -246,6 +240,7 @@ fn evaluate(input: &Input) -> Result<Vec<Jobspec>, Error> {
     let val = state.import(&input.config)?;
     // let val = apply_tla(state.clone(), &tla, val)?;
 
+    // TODO: canonicalize
     // TODO: only eval requested job
     let mut jobspecs = Vec::<Jobspec>::new();
     match val {
@@ -305,6 +300,58 @@ fn print(args: &PrintArgs) -> Result<(), Error> {
     Ok(())
 }
 
+fn diff(args: &DiffArgs) -> Result<(), Error> {
+    let jobspecs = evaluate(&args.input)?;
+
+    let local_spec = jobspecs
+        .iter()
+        .find(|j| {
+            args.input.job_id.is_none()
+                || args.input.job_id.as_ref().unwrap()
+                    == j.job.id.as_ref().unwrap_or(&"*UNSET*".to_owned())
+        })
+        .ok_or(Error::NoJobsFound)?;
+    let local_json = serde_json::to_value(&local_spec.job)?;
+    let local_yaml = serde_yaml::to_string(&local_json)?;
+
+    let remote_json = get_job(
+        args.nomad.address.as_ref().unwrap(),
+        local_spec.job.id.as_ref().unwrap(),
+        local_spec.job.namespace.as_ref(),
+    )?;
+    let remote_yaml = serde_yaml::to_string(&remote_json)?;
+
+    for chunk in diff::lines(&remote_yaml, &local_yaml) {
+        match chunk {
+            diff::Result::Left(l) => println!("-{}", l),
+            diff::Result::Both(l, _) => println!(" {}", l),
+            diff::Result::Right(r) => println!("+{}", r),
+        }
+    }
+
+    Ok(())
+}
+
+fn get_job(
+    base_url: &String,
+    job_id: &String,
+    namespace: Option<&String>,
+) -> reqwest::Result<serde_json::Value> {
+    let mut u = url::Url::parse(&base_url).unwrap();
+    u.set_path(&format!("/v1/job/{job_id}"));
+    if let Some(ns) = namespace {
+        u.set_query(Some(&format!("namespace={ns}")));
+    }
+
+    // TODO: TLS
+
+    let client = reqwest::blocking::Client::builder()
+        .connect_timeout(Duration::from_secs(10))
+        .build()?;
+    let body = client.get(u).send()?.json::<serde_json::Value>()?;
+    Ok(body)
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("no job(s) found")]
@@ -327,4 +374,7 @@ pub enum Error {
 
     #[error("toml error: {0}")]
     Toml(#[from] toml::ser::Error),
+
+    #[error("reqwest error: {0}")]
+    Reqwest(#[from] reqwest::Error),
 }
