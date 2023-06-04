@@ -230,12 +230,12 @@ pub fn main() -> Result<(), Error> {
     }
 }
 
-fn print(args: &PrintArgs) -> Result<(), Error> {
+fn evaluate(input: &Input) -> Result<Vec<Jobspec>, Error> {
     let state = State::default();
     state.set_import_resolver(FileImportResolver::default());
 
     let ctx = ContextInitializer::new(state.clone(), PathResolver::new_cwd_fallback());
-    if let Some(ref imagetag) = args.input.imagetag {
+    if let Some(ref imagetag) = input.imagetag {
         ctx.add_ext_str("imagetag".into(), imagetag.into());
     }
     state.set_context_initializer(ctx);
@@ -243,7 +243,7 @@ fn print(args: &PrintArgs) -> Result<(), Error> {
     // let mut tla = GcHashMap::<IStr, IStr>::new();
     // tla.insert("foo".into(), "foo-value".into());
 
-    let val = state.import(&args.input.config)?;
+    let val = state.import(&input.config)?;
     // let val = apply_tla(state.clone(), &tla, val)?;
 
     // TODO: only eval requested job
@@ -252,34 +252,34 @@ fn print(args: &PrintArgs) -> Result<(), Error> {
         Val::Arr(ref jobs) => {
             for job in jobs.iter() {
                 let val: Val = job?;
-                if args.input.unnested_job {
+                if input.unnested_job {
                     jobspecs.push(Jobspec {
-                        job: deserializer::from_val(&val, args.input.error_on_unknown_field)?,
+                        job: deserializer::from_val(&val, input.error_on_unknown_field)?,
                     });
                 } else {
-                    jobspecs.push(deserializer::from_val(
-                        &val,
-                        args.input.error_on_unknown_field,
-                    )?);
+                    jobspecs.push(deserializer::from_val(&val, input.error_on_unknown_field)?);
                 }
             }
         }
         Val::Obj(_) => {
-            if args.input.unnested_job {
+            if input.unnested_job {
                 jobspecs.push(Jobspec {
-                    job: deserializer::from_val(&val, args.input.error_on_unknown_field)?,
+                    job: deserializer::from_val(&val, input.error_on_unknown_field)?,
                 });
             } else {
-                jobspecs.push(deserializer::from_val(
-                    &val,
-                    args.input.error_on_unknown_field,
-                )?);
+                jobspecs.push(deserializer::from_val(&val, input.error_on_unknown_field)?);
             }
         }
         _ => {
             return Err(Error::ExpectedJobOrArrayOfJobs);
         }
     }
+
+    Ok(jobspecs)
+}
+
+fn print(args: &PrintArgs) -> Result<(), Error> {
+    let jobspecs = evaluate(&args.input)?;
 
     let mut found = false;
     for spec in &jobspecs {
