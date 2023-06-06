@@ -30,6 +30,10 @@ jobs:
           restore-keys: |
             cargo-${{ runner.os }}-${{ steps.toolchain.outputs.rustc_hash }}-
 
+      - name: Install cargo extensions
+        run: cargo install --locked cargo-deny
+        shell: bash
+
       - name: cargo fmt
         run: cargo fmt --all -- --check
         shell: bash
@@ -44,6 +48,10 @@ jobs:
 
       - name: cargo test
         run: cargo test -- --nocapture
+        shell: bash
+
+      - name: cargo deny
+        run: cargo deny check
         shell: bash
 
       - name: cargo package
