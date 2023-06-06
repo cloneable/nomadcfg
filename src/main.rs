@@ -80,8 +80,8 @@ mod nomadapi;
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use jrsonnet_evaluator::{
-    trace::{ExplainingFormat, PathResolver},
-    FileImportResolver, State, Val,
+  trace::{ExplainingFormat, PathResolver},
+  FileImportResolver, State, Val,
 };
 use jrsonnet_stdlib::ContextInitializer;
 use serde::{Deserialize, Serialize};
@@ -90,294 +90,296 @@ use std::{path::PathBuf, process, time::Duration};
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct RootArgs {
-    #[command(subcommand)]
-    command: Command,
+  #[command(subcommand)]
+  command: Command,
 }
 
 #[allow(clippy::large_enum_variant)]
 #[derive(Subcommand, Debug)]
 enum Command {
-    Print(PrintArgs),
-    Diff(DiffArgs),
+  Print(PrintArgs),
+  Diff(DiffArgs),
 }
 
 #[derive(Args, Debug)]
 struct Input {
-    #[arg(long, value_name = "JOB_ID")]
-    job_id: Option<String>,
+  #[arg(long, value_name = "JOB_ID")]
+  job_id: Option<String>,
 
-    #[arg(long, value_name = "TAG")]
-    imagetag: Option<String>,
+  #[arg(long, value_name = "TAG")]
+  imagetag: Option<String>,
 
-    #[arg(long)]
-    error_on_unknown_field: bool,
+  #[arg(long)]
+  error_on_unknown_field: bool,
 
-    #[arg(long)]
-    unnested_job: bool,
+  #[arg(long)]
+  unnested_job: bool,
 
-    config: PathBuf,
+  config: PathBuf,
 }
 
 #[derive(Args, Debug)]
 struct PrintArgs {
-    #[arg(long, value_enum, rename_all = "lower", default_value_t = Format::Json)]
-    format: Format,
+  #[arg(long, value_enum, rename_all = "lower", default_value_t = Format::Json)]
+  format: Format,
 
-    #[command(flatten)]
-    input: Input,
+  #[command(flatten)]
+  input: Input,
 }
 
 #[derive(Clone, ValueEnum, Debug)]
 enum Format {
-    Json,
-    Yaml,
-    Toml,
+  Json,
+  Yaml,
+  Toml,
 }
 
 #[derive(Args, Debug)]
 struct DiffArgs {
-    #[command(flatten)]
-    nomad: NomadArgs,
+  #[command(flatten)]
+  nomad: NomadArgs,
 
-    #[command(flatten)]
-    input: Input,
+  #[command(flatten)]
+  input: Input,
 }
 
 #[derive(Args, Debug)]
 struct NomadArgs {
-    #[arg(
-        long,
-        env = "NOMAD_ADDR",
-        default_value = "http://127.0.0.1:4646",
-        value_name = "URL"
-    )]
-    address: Option<String>,
+  #[arg(
+    long,
+    env = "NOMAD_ADDR",
+    default_value = "http://127.0.0.1:4646",
+    value_name = "URL"
+  )]
+  address: Option<String>,
 
-    #[arg(long, env = "NOMAD_CACERT", value_name = "PATH")]
-    ca_cert: Option<PathBuf>,
+  #[arg(long, env = "NOMAD_CACERT", value_name = "PATH")]
+  ca_cert: Option<PathBuf>,
 
-    #[arg(long, env = "NOMAD_CAPATH", value_name = "PATH")]
-    ca_path: Option<PathBuf>,
+  #[arg(long, env = "NOMAD_CAPATH", value_name = "PATH")]
+  ca_path: Option<PathBuf>,
 
-    #[arg(long, env = "NOMAD_CLIENT_CERT", value_name = "PATH")]
-    client_cert: Option<PathBuf>,
+  #[arg(long, env = "NOMAD_CLIENT_CERT", value_name = "PATH")]
+  client_cert: Option<PathBuf>,
 
-    #[arg(long, env = "NOMAD_CLIENT_KEY", value_name = "PATH")]
-    client_key: Option<PathBuf>,
+  #[arg(long, env = "NOMAD_CLIENT_KEY", value_name = "PATH")]
+  client_key: Option<PathBuf>,
 
-    #[arg(long, env = "NOMAD_TLS_SERVER_NAME", value_name = "SERVER_NAME")]
-    tls_server_name: Option<String>,
+  #[arg(long, env = "NOMAD_TLS_SERVER_NAME", value_name = "SERVER_NAME")]
+  tls_server_name: Option<String>,
 
-    #[arg(long, env = "NOMAD_SKIP_VERIFY")]
-    tls_skip_verify: bool,
+  #[arg(long, env = "NOMAD_SKIP_VERIFY")]
+  tls_skip_verify: bool,
 
-    #[arg(long, env = "NOMAD_REGION", value_name = "REGION")]
-    region: Option<String>,
+  #[arg(long, env = "NOMAD_REGION", value_name = "REGION")]
+  region: Option<String>,
 
-    #[arg(
-        long,
-        env = "NOMAD_NAMESPACE",
-        default_value = "default",
-        value_name = "NAMESPACE"
-    )]
-    namespace: Option<String>,
+  #[arg(
+    long,
+    env = "NOMAD_NAMESPACE",
+    default_value = "default",
+    value_name = "NAMESPACE"
+  )]
+  namespace: Option<String>,
 
-    #[arg(long, env = "NOMAD_TOKEN", value_name = "TOKEN")]
-    token: Option<String>,
+  #[arg(long, env = "NOMAD_TOKEN", value_name = "TOKEN")]
+  token: Option<String>,
 
-    #[arg(long, env = "VAULT_TOKEN", value_name = "TOKEN")]
-    vault_token: Option<String>,
+  #[arg(long, env = "VAULT_TOKEN", value_name = "TOKEN")]
+  vault_token: Option<String>,
 
-    #[arg(long, value_name = "NAMESPACE")]
-    vault_namespace: Option<String>,
+  #[arg(long, value_name = "NAMESPACE")]
+  vault_namespace: Option<String>,
 
-    #[arg(long, env = "CONSUL_HTTP_TOKEN", value_name = "TOKEN")]
-    consul_token: Option<String>,
+  #[arg(long, env = "CONSUL_HTTP_TOKEN", value_name = "TOKEN")]
+  consul_token: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 struct Jobspec {
-    #[serde(rename(deserialize = "job", serialize = "Job"))]
-    job: nomadapi::Job,
+  #[serde(rename(deserialize = "job", serialize = "Job"))]
+  job: nomadapi::Job,
 }
 
 pub fn main() -> Result<(), Error> {
-    let args = RootArgs::parse();
+  let args = RootArgs::parse();
 
-    match args.command {
-        Command::Print(print_args) => match print(&print_args) {
-            Err(Error::SerdeJrsonnet(error::Error::Evaluator(e)) | Error::Jrsonnet(e)) => {
-                use jrsonnet_evaluator::trace::TraceFormat;
+  match args.command {
+    Command::Print(print_args) => match print(&print_args) {
+      Err(
+        Error::SerdeJrsonnet(error::Error::Evaluator(e)) | Error::Jrsonnet(e),
+      ) => {
+        use jrsonnet_evaluator::trace::TraceFormat;
 
-                let trace = Box::new(ExplainingFormat {
-                    resolver: PathResolver::new_cwd_fallback(),
-                    max_trace: 10,
-                });
-                let mut out = String::new();
-                trace.write_trace(&mut out, &e).expect("format error");
-                eprintln!("{out}");
-                process::exit(1);
-            }
-            r => r,
-        },
-        Command::Diff(diff_args) => diff(&diff_args),
-    }
+        let trace = Box::new(ExplainingFormat {
+          resolver: PathResolver::new_cwd_fallback(),
+          max_trace: 10,
+        });
+        let mut out = String::new();
+        trace.write_trace(&mut out, &e).expect("format error");
+        eprintln!("{out}");
+        process::exit(1);
+      }
+      r => r,
+    },
+    Command::Diff(diff_args) => diff(&diff_args),
+  }
 }
 
 fn evaluate(input: &Input) -> Result<Vec<Jobspec>, Error> {
-    let state = State::default();
-    state.set_import_resolver(FileImportResolver::default());
+  let state = State::default();
+  state.set_import_resolver(FileImportResolver::default());
 
-    let ctx = ContextInitializer::new(state.clone(), PathResolver::new_cwd_fallback());
-    if let Some(ref imagetag) = input.imagetag {
-        ctx.add_ext_str("imagetag".into(), imagetag.into());
+  let ctx =
+    ContextInitializer::new(state.clone(), PathResolver::new_cwd_fallback());
+  if let Some(ref imagetag) = input.imagetag {
+    ctx.add_ext_str("imagetag".into(), imagetag.into());
+  }
+  state.set_context_initializer(ctx);
+
+  // let mut tla = GcHashMap::<IStr, IStr>::new();
+  // tla.insert("foo".into(), "foo-value".into());
+
+  let val = state.import(&input.config)?;
+  // let val = apply_tla(state.clone(), &tla, val)?;
+
+  // TODO: canonicalize
+  // TODO: only eval requested job
+  let mut jobspecs = Vec::<Jobspec>::new();
+  match val {
+    Val::Arr(ref jobs) => {
+      for job in jobs.iter() {
+        let val: Val = job?;
+        if input.unnested_job {
+          jobspecs.push(Jobspec {
+            job: deserializer::from_val(&val, input.error_on_unknown_field)?,
+          });
+        } else {
+          jobspecs
+            .push(deserializer::from_val(&val, input.error_on_unknown_field)?);
+        }
+      }
     }
-    state.set_context_initializer(ctx);
-
-    // let mut tla = GcHashMap::<IStr, IStr>::new();
-    // tla.insert("foo".into(), "foo-value".into());
-
-    let val = state.import(&input.config)?;
-    // let val = apply_tla(state.clone(), &tla, val)?;
-
-    // TODO: canonicalize
-    // TODO: only eval requested job
-    let mut jobspecs = Vec::<Jobspec>::new();
-    match val {
-        Val::Arr(ref jobs) => {
-            for job in jobs.iter() {
-                let val: Val = job?;
-                if input.unnested_job {
-                    jobspecs.push(Jobspec {
-                        job: deserializer::from_val(&val, input.error_on_unknown_field)?,
-                    });
-                } else {
-                    jobspecs.push(deserializer::from_val(&val, input.error_on_unknown_field)?);
-                }
-            }
-        }
-        Val::Obj(_) => {
-            if input.unnested_job {
-                jobspecs.push(Jobspec {
-                    job: deserializer::from_val(&val, input.error_on_unknown_field)?,
-                });
-            } else {
-                jobspecs.push(deserializer::from_val(&val, input.error_on_unknown_field)?);
-            }
-        }
-        _ => {
-            return Err(Error::ExpectedJobOrArrayOfJobs);
-        }
+    Val::Obj(_) => {
+      if input.unnested_job {
+        jobspecs.push(Jobspec {
+          job: deserializer::from_val(&val, input.error_on_unknown_field)?,
+        });
+      } else {
+        jobspecs
+          .push(deserializer::from_val(&val, input.error_on_unknown_field)?);
+      }
     }
+    _ => {
+      return Err(Error::ExpectedJobOrArrayOfJobs);
+    }
+  }
 
-    Ok(jobspecs)
+  Ok(jobspecs)
 }
 
 fn print(args: &PrintArgs) -> Result<(), Error> {
-    let jobspecs = evaluate(&args.input)?;
+  let jobspecs = evaluate(&args.input)?;
 
-    let mut found = false;
-    for spec in &jobspecs {
-        if args.input.job_id.is_none()
-            || args.input.job_id.as_ref().unwrap()
-                == spec.job.id.as_ref().unwrap_or(&"*UNSET*".to_owned())
-        {
-            found = true;
-            let output = match args.format {
-                Format::Json => serde_json::to_string_pretty(&spec)?,
-                Format::Yaml => serde_yaml::to_string(&spec)?,
-                Format::Toml => toml::to_string_pretty(&spec)?,
-            };
-            println!("{output}");
-        }
+  let mut found = false;
+  for spec in &jobspecs {
+    if args.input.job_id.is_none()
+      || args.input.job_id.as_ref().unwrap()
+        == spec.job.id.as_ref().unwrap_or(&"*UNSET*".to_owned())
+    {
+      found = true;
+      let output = match args.format {
+        Format::Json => serde_json::to_string_pretty(&spec)?,
+        Format::Yaml => serde_yaml::to_string(&spec)?,
+        Format::Toml => toml::to_string_pretty(&spec)?,
+      };
+      println!("{output}");
     }
+  }
 
-    if !found {
-        eprintln!("No job(s) found.");
-        process::exit(1);
-    }
+  if !found {
+    eprintln!("No job(s) found.");
+    process::exit(1);
+  }
 
-    Ok(())
+  Ok(())
 }
 
 fn diff(args: &DiffArgs) -> Result<(), Error> {
-    let jobspecs = evaluate(&args.input)?;
+  let jobspecs = evaluate(&args.input)?;
 
-    let local_spec = jobspecs
-        .iter()
-        .find(|j| {
-            args.input.job_id.is_none()
-                || args.input.job_id.as_ref().unwrap()
-                    == j.job.id.as_ref().unwrap_or(&"*UNSET*".to_owned())
-        })
-        .ok_or(Error::NoJobsFound)?;
-    let local_json = serde_json::to_value(&local_spec.job)?;
-    let local_yaml = serde_yaml::to_string(&local_json)?;
+  let local_spec = jobspecs
+    .iter()
+    .find(|j| {
+      args.input.job_id.is_none()
+        || args.input.job_id.as_ref().unwrap()
+          == j.job.id.as_ref().unwrap_or(&"*UNSET*".to_owned())
+    })
+    .ok_or(Error::NoJobsFound)?;
+  let local_json = serde_json::to_value(&local_spec.job)?;
+  let local_yaml = serde_yaml::to_string(&local_json)?;
 
-    let remote_json = get_job(
-        args.nomad.address.as_ref().unwrap(),
-        local_spec.job.id.as_ref().unwrap(),
-        local_spec.job.namespace.as_ref(),
-    )?;
-    let remote_yaml = serde_yaml::to_string(&remote_json)?;
+  let remote_json = get_job(
+    args.nomad.address.as_ref().unwrap(),
+    local_spec.job.id.as_ref().unwrap(),
+    local_spec.job.namespace.as_ref(),
+  )?;
+  let remote_yaml = serde_yaml::to_string(&remote_json)?;
 
-    for chunk in diff::lines(&remote_yaml, &local_yaml) {
-        match chunk {
-            diff::Result::Left(l) => println!("-{}", l),
-            diff::Result::Both(l, _) => println!(" {}", l),
-            diff::Result::Right(r) => println!("+{}", r),
-        }
+  for chunk in diff::lines(&remote_yaml, &local_yaml) {
+    match chunk {
+      diff::Result::Left(l) => println!("-{}", l),
+      diff::Result::Both(l, _) => println!(" {}", l),
+      diff::Result::Right(r) => println!("+{}", r),
     }
+  }
 
-    Ok(())
+  Ok(())
 }
 
 fn get_job(
-    base_url: &String,
-    job_id: &String,
-    namespace: Option<&String>,
+  base_url: &String,
+  job_id: &String,
+  namespace: Option<&String>,
 ) -> reqwest::Result<serde_json::Value> {
-    let mut u = url::Url::parse(&base_url).unwrap();
-    u.path_segments_mut()
-        .unwrap()
-        .clear()
-        .extend(["v1", "job", job_id]);
-    if let Some(ns) = namespace {
-        u.set_query(Some(&format!("namespace={ns}")));
-    }
+  let mut u = url::Url::parse(&base_url).unwrap();
+  u.path_segments_mut().unwrap().clear().extend(["v1", "job", job_id]);
+  if let Some(ns) = namespace {
+    u.set_query(Some(&format!("namespace={ns}")));
+  }
 
-    // TODO: TLS
+  // TODO: TLS
 
-    let client = reqwest::blocking::Client::builder()
-        .connect_timeout(Duration::from_secs(10))
-        .build()?;
-    let body = client.get(u).send()?.json::<serde_json::Value>()?;
-    Ok(body)
+  let client = reqwest::blocking::Client::builder()
+    .connect_timeout(Duration::from_secs(10))
+    .build()?;
+  let body = client.get(u).send()?.json::<serde_json::Value>()?;
+  Ok(body)
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("no job(s) found")]
-    NoJobsFound,
+  #[error("no job(s) found")]
+  NoJobsFound,
 
-    #[error("expected job or array of jobs")]
-    ExpectedJobOrArrayOfJobs,
+  #[error("expected job or array of jobs")]
+  ExpectedJobOrArrayOfJobs,
 
-    #[error("jrsonnet error: {0}")]
-    Jrsonnet(#[from] jrsonnet_evaluator::Error),
+  #[error("jrsonnet error: {0}")]
+  Jrsonnet(#[from] jrsonnet_evaluator::Error),
 
-    #[error("serde_jrsonnet error: {0}")]
-    SerdeJrsonnet(#[from] error::Error),
+  #[error("serde_jrsonnet error: {0}")]
+  SerdeJrsonnet(#[from] error::Error),
 
-    #[error("serde_json error: {0}")]
-    SerdeJson(#[from] serde_json::Error),
+  #[error("serde_json error: {0}")]
+  SerdeJson(#[from] serde_json::Error),
 
-    #[error("serde_yaml error: {0}")]
-    SerdeYaml(#[from] serde_yaml::Error),
+  #[error("serde_yaml error: {0}")]
+  SerdeYaml(#[from] serde_yaml::Error),
 
-    #[error("toml error: {0}")]
-    Toml(#[from] toml::ser::Error),
+  #[error("toml error: {0}")]
+  Toml(#[from] toml::ser::Error),
 
-    #[error("reqwest error: {0}")]
-    Reqwest(#[from] reqwest::Error),
+  #[error("reqwest error: {0}")]
+  Reqwest(#[from] reqwest::Error),
 }

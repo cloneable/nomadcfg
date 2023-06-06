@@ -6,116 +6,116 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("FieldNotVisible: {0}.{1}")]
-    FieldNotVisible(ValPath, String),
+  #[error("FieldNotVisible: {0}.{1}")]
+  FieldNotVisible(ValPath, String),
 
-    #[error("FieldNotFound: {0}.{1}")]
-    FieldNotFound(ValPath, String),
+  #[error("FieldNotFound: {0}.{1}")]
+  FieldNotFound(ValPath, String),
 
-    #[error("{0}: expected Bool, found {1:?}")]
-    ExpectedBool(ValPath, ValType),
+  #[error("{0}: expected Bool, found {1:?}")]
+  ExpectedBool(ValPath, ValType),
 
-    #[error("{0}: expected Null, found {1:?}")]
-    ExpectedNull(ValPath, ValType),
+  #[error("{0}: expected Null, found {1:?}")]
+  ExpectedNull(ValPath, ValType),
 
-    #[error("{0}: expected Str, found {1:?}")]
-    ExpectedStr(ValPath, ValType),
+  #[error("{0}: expected Str, found {1:?}")]
+  ExpectedStr(ValPath, ValType),
 
-    #[error("{0}: expected Num, found {1:?}")]
-    ExpectedNum(ValPath, ValType),
+  #[error("{0}: expected Num, found {1:?}")]
+  ExpectedNum(ValPath, ValType),
 
-    #[error("{0}: expected Array, found {1:?}")]
-    ExpectedArr(ValPath, ValType),
+  #[error("{0}: expected Array, found {1:?}")]
+  ExpectedArr(ValPath, ValType),
 
-    #[error("{0}: expected Obj, found {1:?}")]
-    ExpectedObj(ValPath, ValType),
+  #[error("{0}: expected Obj, found {1:?}")]
+  ExpectedObj(ValPath, ValType),
 
-    #[error("{0}: expected Func, found {1:?}")]
-    ExpectedFunc(ValPath, ValType),
+  #[error("{0}: expected Func, found {1:?}")]
+  ExpectedFunc(ValPath, ValType),
 
-    #[error("{0}: expected identifier")]
-    IdentifierExpected(ValPath),
+  #[error("{0}: expected identifier")]
+  IdentifierExpected(ValPath),
 
-    #[error("{0}: unexpected value: {1:?}")]
-    UnexpectedVal(ValPath, ValType),
+  #[error("{0}: unexpected value: {1:?}")]
+  UnexpectedVal(ValPath, ValType),
 
-    #[error("serde error: {0}")]
-    Serde(String),
+  #[error("serde error: {0}")]
+  Serde(String),
 
-    #[error("evaluator error: {0}")]
-    Evaluator(#[from] jrsonnet_evaluator::Error),
+  #[error("evaluator error: {0}")]
+  Evaluator(#[from] jrsonnet_evaluator::Error),
 
-    #[error("{0}: invalid key field value: {1}")]
-    InvalidKeyFieldValue(ValPath, ValType),
+  #[error("{0}: invalid key field value: {1}")]
+  InvalidKeyFieldValue(ValPath, ValType),
 
-    #[error("{0}: unimplemented: {1}")]
-    Unimplemented(ValPath, String),
+  #[error("{0}: unimplemented: {1}")]
+  Unimplemented(ValPath, String),
 }
 
 impl ser::Error for Error {
-    fn custom<T: fmt::Display>(msg: T) -> Self {
-        Error::Serde(msg.to_string())
-    }
+  fn custom<T: fmt::Display>(msg: T) -> Self {
+    Error::Serde(msg.to_string())
+  }
 }
 
 impl de::Error for Error {
-    fn custom<T: fmt::Display>(msg: T) -> Self {
-        Error::Serde(msg.to_string())
-    }
+  fn custom<T: fmt::Display>(msg: T) -> Self {
+    Error::Serde(msg.to_string())
+  }
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct RcValPath(Rc<RefCell<ValPath>>);
 
 impl RcValPath {
-    pub fn push(&mut self, entry: ValPathEntry) -> RcValPathGuard {
-        self.0.borrow_mut().0.push(entry);
-        RcValPathGuard { path: self.clone() }
-    }
+  pub fn push(&mut self, entry: ValPathEntry) -> RcValPathGuard {
+    self.0.borrow_mut().0.push(entry);
+    RcValPathGuard { path: self.clone() }
+  }
 
-    fn pop(&mut self) -> &mut Self {
-        self.0.borrow_mut().0.pop().expect("path empty");
-        self
-    }
+  fn pop(&mut self) -> &mut Self {
+    self.0.borrow_mut().0.pop().expect("path empty");
+    self
+  }
 
-    pub fn entries(&self) -> ValPath {
-        self.0.borrow().clone()
-    }
+  pub fn entries(&self) -> ValPath {
+    self.0.borrow().clone()
+  }
 }
 
 pub struct RcValPathGuard {
-    path: RcValPath,
+  path: RcValPath,
 }
 
 impl Drop for RcValPathGuard {
-    fn drop(&mut self) {
-        self.path.pop();
-    }
+  fn drop(&mut self) {
+    self.path.pop();
+  }
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct ValPath(Vec<ValPathEntry>);
 
 impl fmt::Display for ValPath {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for entry in &self.0 {
-            entry.fmt(f)?;
-        }
-        Ok(())
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    for entry in &self.0 {
+      entry.fmt(f)?;
     }
+    Ok(())
+  }
 }
 
 #[derive(Debug, Clone)]
 pub enum ValPathEntry {
-    Field(String),
-    Index(usize),
+  Field(String),
+  Index(usize),
 }
 
 impl fmt::Display for ValPathEntry {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ValPathEntry::Index(i) => write!(f, "[{i}]"),
-            ValPathEntry::Field(name) => write!(f, ".{name}"), // TODO: escaping
-        }
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      ValPathEntry::Index(i) => write!(f, "[{i}]"),
+      ValPathEntry::Field(name) => write!(f, ".{name}"), // TODO: escaping
     }
+  }
 }
