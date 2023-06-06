@@ -338,7 +338,10 @@ fn get_job(
     namespace: Option<&String>,
 ) -> reqwest::Result<serde_json::Value> {
     let mut u = url::Url::parse(&base_url).unwrap();
-    u.set_path(&format!("/v1/job/{job_id}"));
+    u.path_segments_mut()
+        .unwrap()
+        .clear()
+        .extend(["v1", "job", job_id]);
     if let Some(ns) = namespace {
         u.set_query(Some(&format!("namespace={ns}")));
     }
