@@ -18,13 +18,13 @@ pub struct Job {
     pub namespace: Option<String>,
     #[serde(
         rename(deserialize = "id", serialize = "ID"),
+        alias = "__label__",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub id: Option<String>,
     #[serde(
         rename(deserialize = "name", serialize = "Name"),
-        alias = "__label__",
         default,
         skip_serializing_if = "Option::is_none"
     )]

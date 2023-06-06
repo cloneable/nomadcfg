@@ -153,7 +153,7 @@ type tagAttrs struct {
 }
 
 var extraLabelFields = map[string]string{
-	"Job":          "Name", // TODO: or ID?
+	"Job":          "ID",
 	"Template":     "DestPath",
 	"Service":      "Name",
 	"ServiceCheck": "Name",
