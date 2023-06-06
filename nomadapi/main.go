@@ -319,6 +319,8 @@ func (g *CodeGenerator) emitStructField(f reflect.StructField, attrs tagAttrs) e
 		return fmt.Errorf("unexpected field type: %v", t)
 	}
 
+	skipSerializingIf := ""
+
 	if repeated {
 		rustType = "Vec<" + rustType + ">"
 	}
@@ -327,15 +329,19 @@ func (g *CodeGenerator) emitStructField(f reflect.StructField, attrs tagAttrs) e
 	}
 	if attrs.optional || attrs.block {
 		rustType = "Option<" + rustType + ">"
+		skipSerializingIf = "Option::is_none"
 	}
 
 	aliasAttr := ""
 	if attrs.label {
 		aliasAttr = `, alias = "__label__"`
 	}
+	if skipSerializingIf != "" {
+		skipSerializingIf = fmt.Sprintf(", skip_serializing_if = %q", skipSerializingIf)
+	}
 
-	_, err := fmt.Fprintf(g.output, `    #[serde(rename(deserialize = %q, serialize = %q)%s, default)]
+	_, err := fmt.Fprintf(g.output, `    #[serde(rename(deserialize = %q, serialize = %q)%s, default%s)]
     pub %s: %s,
-`, deserName, serName, aliasAttr, fieldName, rustType)
+`, deserName, serName, aliasAttr, skipSerializingIf, fieldName, rustType)
 	return err
 }
