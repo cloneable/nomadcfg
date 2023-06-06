@@ -1,4 +1,5 @@
 use crate::error::{Error, RcValPath, Result, ValPathEntry};
+use indexmap::IndexSet;
 use jrsonnet_evaluator::{
   val::{ArrValue, StrValue},
   ObjValue, ObjValueBuilder, Val,
@@ -8,6 +9,7 @@ use serde::{
   de::{self, value::StrDeserializer, IntoDeserializer},
   Deserialize,
 };
+use std::ops::Deref;
 
 const BLOCK_LABEL_FIELD: &str = "__label__";
 
@@ -614,6 +616,19 @@ impl<'a, 'de: 'a> de::MapAccess<'de> for ObjValueMap<'a> {
   {
     let key = loop {
       if self.field_idx == self.fields.len() {
+        // TODO: skip all handled fields
+        let known_fields: IndexSet<&str> =
+          self.fields.iter().map(Deref::deref).collect();
+        for field in self.val.fields(true) {
+          let field: &str = field.as_str();
+          if field != BLOCK_LABEL_FIELD && !known_fields.contains(field) {
+            // TODO: levenshtein typo check
+            return Err(Error::FieldNotExpected(
+              self.path.entries(),
+              field.to_string(),
+            ));
+          }
+        }
         return Ok(None);
       }
       let key = self.fields[self.field_idx];
