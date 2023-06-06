@@ -322,7 +322,7 @@ fn diff(args: &DiffArgs) -> Result<(), Error> {
   let remote_json = get_job(
     args.nomad.address.as_ref().unwrap(),
     local_spec.job.id.as_ref().unwrap(),
-    local_spec.job.namespace.as_ref(),
+    local_spec.job.namespace.as_deref(),
   )?;
   let remote_yaml = serde_yaml::to_string(&remote_json)?;
 
@@ -338,11 +338,11 @@ fn diff(args: &DiffArgs) -> Result<(), Error> {
 }
 
 fn get_job(
-  base_url: &String,
-  job_id: &String,
-  namespace: Option<&String>,
+  base_url: &str,
+  job_id: &str,
+  namespace: Option<&str>,
 ) -> reqwest::Result<serde_json::Value> {
-  let mut u = url::Url::parse(&base_url).unwrap();
+  let mut u = url::Url::parse(base_url).unwrap();
   u.path_segments_mut().unwrap().clear().extend(["v1", "job", job_id]);
   if let Some(ns) = namespace {
     u.set_query(Some(&format!("namespace={ns}")));
