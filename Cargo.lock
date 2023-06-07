@@ -911,6 +911,7 @@ version = "1.0.96"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "057d394a50403bcac12672b2b18fb387ab6d289d957dab67dd201875391e52f1"
 dependencies = [
+ "indexmap",
  "itoa",
  "ryu",
  "serde",
@@ -1130,6 +1131,7 @@ version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6135d499e69981f9ff0ef2167955a5333c35e36f6937d382974566b3d5b94ec"
 dependencies = [
+ "indexmap",
  "serde",
  "serde_spanned",
  "toml_datetime",
