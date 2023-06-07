@@ -622,10 +622,11 @@ impl<'a, 'de: 'a> de::MapAccess<'de> for ObjValueMap<'a> {
         for field in self.val.fields(true) {
           let field: &str = field.as_str();
           if field != BLOCK_LABEL_FIELD && !known_fields.contains(field) {
-            // TODO: levenshtein typo check
+            let suggest_field = find_similar_field(&known_fields, field);
             return Err(Error::FieldNotExpected(
               self.path.entries(),
               field.to_string(),
+              suggest_field,
             ));
           }
         }
@@ -786,4 +787,23 @@ impl<'a, 'de: 'a> de::MapAccess<'de> for MapValueMap<'a> {
       None => Err(Error::FieldNotFound(self.path.entries(), key.to_string())),
     }
   }
+}
+
+fn find_similar_field(
+  known_fields: &IndexSet<&'static str>,
+  field: &str,
+) -> Option<&'static str> {
+  // TODO: min threshold?
+  let mut least_changes: f64 = 0.;
+  let mut closest: Option<&str> = None;
+
+  for known_field in known_fields.iter() {
+    let d = strsim::jaro_winkler(known_field, field);
+    if d > least_changes {
+      least_changes = d;
+      closest = Some(known_field);
+    }
+  }
+
+  closest
 }

@@ -12,8 +12,8 @@ pub enum Error {
   #[error("FieldNotFound: {0}.{1}")]
   FieldNotFound(ValPath, String),
 
-  #[error("{0}: field not expected: {1}")]
-  FieldNotExpected(ValPath, String),
+  #[error("{0}: field not expected: {1} (suggestion: {2:?})")]
+  FieldNotExpected(ValPath, String, Option<&'static str>),
 
   #[error("{0}: expected Bool, found {1:?}")]
   ExpectedBool(ValPath, ValType),
