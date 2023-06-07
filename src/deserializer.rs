@@ -102,7 +102,9 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
         visitor.visit_i8(x)
       }
       Val::Str(v) => visitor.visit_i8(
-        v.to_string().parse().map_err(|_| self.err_expected(ValType::Num))?,
+        v.to_string()
+          .parse()
+          .map_err(|e| Error::NumParse(self.path.entries(), e))?,
       ),
       _ => Err(self.err_expected(ValType::Num)),
     }
@@ -124,7 +126,9 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
         visitor.visit_i16(x)
       }
       Val::Str(v) => visitor.visit_i16(
-        v.to_string().parse().map_err(|_| self.err_expected(ValType::Num))?,
+        v.to_string()
+          .parse()
+          .map_err(|e| Error::NumParse(self.path.entries(), e))?,
       ),
       _ => Err(self.err_expected(ValType::Num)),
     }
@@ -146,7 +150,9 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
         visitor.visit_i32(x)
       }
       Val::Str(v) => visitor.visit_i32(
-        v.to_string().parse().map_err(|_| self.err_expected(ValType::Num))?,
+        v.to_string()
+          .parse()
+          .map_err(|e| Error::NumParse(self.path.entries(), e))?,
       ),
       _ => Err(self.err_expected(ValType::Num)),
     }
@@ -168,7 +174,9 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
         visitor.visit_i64(x)
       }
       Val::Str(v) => visitor.visit_i64(
-        v.to_string().parse().map_err(|_| self.err_expected(ValType::Num))?,
+        v.to_string()
+          .parse()
+          .map_err(|e| Error::NumParse(self.path.entries(), e))?,
       ),
       _ => Err(self.err_expected(ValType::Num)),
     }
@@ -191,7 +199,9 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
           visitor.visit_i128(x)
         }
         Val::Str(v) => visitor.visit_i128(
-          v.to_string().parse().map_err(|_| self.err_expected(ValType::Num))?,
+          v.to_string()
+            .parse()
+            .map_err(|e| Error::NumParse(self.path.entries(), e))?,
         ),
         _ => Err(self.err_expected(ValType::Num)),
       }
@@ -214,7 +224,9 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
         visitor.visit_u8(x)
       }
       Val::Str(v) => visitor.visit_u8(
-        v.to_string().parse().map_err(|_| self.err_expected(ValType::Num))?,
+        v.to_string()
+          .parse()
+          .map_err(|e| Error::NumParse(self.path.entries(), e))?,
       ),
       _ => Err(self.err_expected(ValType::Num)),
     }
@@ -236,7 +248,9 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
         visitor.visit_u16(x)
       }
       Val::Str(v) => visitor.visit_u16(
-        v.to_string().parse().map_err(|_| self.err_expected(ValType::Num))?,
+        v.to_string()
+          .parse()
+          .map_err(|e| Error::NumParse(self.path.entries(), e))?,
       ),
       _ => Err(self.err_expected(ValType::Num)),
     }
@@ -258,7 +272,9 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
         visitor.visit_u32(x)
       }
       Val::Str(v) => visitor.visit_u32(
-        v.to_string().parse().map_err(|_| self.err_expected(ValType::Num))?,
+        v.to_string()
+          .parse()
+          .map_err(|e| Error::NumParse(self.path.entries(), e))?,
       ),
       _ => Err(self.err_expected(ValType::Num)),
     }
@@ -280,7 +296,9 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
         visitor.visit_u64(x)
       }
       Val::Str(v) => visitor.visit_u64(
-        v.to_string().parse().map_err(|_| self.err_expected(ValType::Num))?,
+        v.to_string()
+          .parse()
+          .map_err(|e| Error::NumParse(self.path.entries(), e))?,
       ),
       _ => Err(self.err_expected(ValType::Num)),
     }
@@ -303,7 +321,9 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'a> {
           visitor.visit_u128(x)
         }
         Val::Str(v) => visitor.visit_u128(
-          v.to_string().parse().map_err(|_| self.err_expected(ValType::Num))?,
+          v.to_string()
+            .parse()
+            .map_err(|e| Error::NumParse(self.path.entries(), e))?,
         ),
         _ => Err(self.err_expected(ValType::Num)),
       }

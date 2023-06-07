@@ -32,7 +32,7 @@
     clippy::lossy_float_literal,
     clippy::macro_use_imports,
     clippy::manual_ok_or,
-    // clippy::map_err_ignore,
+    clippy::map_err_ignore,
     clippy::map_flatten,
     clippy::map_unwrap_or,
     clippy::match_on_vec_items,

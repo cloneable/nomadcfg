@@ -1,6 +1,6 @@
 use jrsonnet_evaluator::typed::ValType;
 use serde::{de, ser};
-use std::{cell::RefCell, fmt, rc::Rc};
+use std::{cell::RefCell, fmt, num::ParseIntError, rc::Rc};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -35,6 +35,9 @@ pub enum Error {
 
   #[error("{path}: unexpected type: {actual}, want {expected}")]
   UnexpectedType { path: ValPath, expected: ValType, actual: ValType },
+
+  #[error("{0}: cannot parse number: {1}")]
+  NumParse(ValPath, ParseIntError),
 
   #[error("{0}: expected identifier")]
   IdentifierExpected(ValPath),
