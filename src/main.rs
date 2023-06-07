@@ -220,6 +220,10 @@ pub fn main() -> Result<(), Error> {
         eprintln!("{out}");
         process::exit(1);
       }
+      Err(e) => {
+        eprintln!("Error: {e}");
+        process::exit(1);
+      }
       r => r,
     },
     Command::Diff(diff_args) => diff(&diff_args),
@@ -368,7 +372,7 @@ pub enum Error {
   #[error("jrsonnet error: {0}")]
   Jrsonnet(#[from] jrsonnet_evaluator::Error),
 
-  #[error("serde_jrsonnet error: {0}")]
+  #[error("deserializer error: {0}")]
   SerdeJrsonnet(#[from] error::Error),
 
   #[error("serde_json error: {0}")]

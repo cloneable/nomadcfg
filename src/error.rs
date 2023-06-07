@@ -4,42 +4,60 @@ use std::{cell::RefCell, fmt, rc::Rc};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
+#[derive(Clone, Debug)]
+pub struct Suggestion(pub Option<&'static str>);
+
+impl fmt::Display for Suggestion {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self.0 {
+      Some(s) => write!(f, "{s}"),
+      None => write!(f, "none"),
+    }
+  }
+}
+
+impl From<Option<&'static str>> for Suggestion {
+  fn from(value: Option<&'static str>) -> Self {
+    Suggestion(value)
+  }
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-  #[error("FieldNotVisible: {0}.{1}")]
+  #[error("{0}: field not visible: {1}")]
   FieldNotVisible(ValPath, String),
 
-  #[error("FieldNotFound: {0}.{1}")]
+  #[error("{0}: field not found: {1}")]
   FieldNotFound(ValPath, String),
 
-  #[error("{0}: field not expected: {1} (suggestion: {2:?})")]
-  FieldNotExpected(ValPath, String, Option<&'static str>),
+  #[error("{0}: field not expected: {1} (suggestion: {2})")]
+  FieldNotExpected(ValPath, String, Suggestion),
 
-  #[error("{0}: expected Bool, found {1:?}")]
+  #[error("{0}: expected Bool, found {1}")]
   ExpectedBool(ValPath, ValType),
 
-  #[error("{0}: expected Null, found {1:?}")]
+  #[error("{0}: expected Null, found {1}")]
   ExpectedNull(ValPath, ValType),
 
-  #[error("{0}: expected Str, found {1:?}")]
+  #[error("{0}: expected Str, found {1}")]
   ExpectedStr(ValPath, ValType),
 
-  #[error("{0}: expected Num, found {1:?}")]
+  #[error("{0}: expected Num, found {1}")]
   ExpectedNum(ValPath, ValType),
 
-  #[error("{0}: expected Array, found {1:?}")]
+  #[error("{0}: expected Array, found {1}")]
   ExpectedArr(ValPath, ValType),
 
-  #[error("{0}: expected Obj, found {1:?}")]
+  #[error("{0}: expected Obj, found {1}")]
   ExpectedObj(ValPath, ValType),
 
-  #[error("{0}: expected Func, found {1:?}")]
+  #[error("{0}: expected Func, found {1}")]
   ExpectedFunc(ValPath, ValType),
 
   #[error("{0}: expected identifier")]
   IdentifierExpected(ValPath),
 
-  #[error("{0}: unexpected value: {1:?}")]
+  #[error("{0}: unexpected value: {1}")]
   UnexpectedVal(ValPath, ValType),
 
   #[error("serde error: {0}")]

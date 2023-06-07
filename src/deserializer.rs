@@ -626,7 +626,7 @@ impl<'a, 'de: 'a> de::MapAccess<'de> for ObjValueMap<'a> {
             return Err(Error::FieldNotExpected(
               self.path.entries(),
               field.to_string(),
-              suggest_field,
+              suggest_field.into(),
             ));
           }
         }
