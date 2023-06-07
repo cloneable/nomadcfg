@@ -33,26 +33,8 @@ pub enum Error {
   #[error("{0}: field not expected: {1} (suggestion: {2})")]
   FieldNotExpected(ValPath, String, Suggestion),
 
-  #[error("{0}: expected Bool, found {1}")]
-  ExpectedBool(ValPath, ValType),
-
-  #[error("{0}: expected Null, found {1}")]
-  ExpectedNull(ValPath, ValType),
-
-  #[error("{0}: expected Str, found {1}")]
-  ExpectedStr(ValPath, ValType),
-
-  #[error("{0}: expected Num, found {1}")]
-  ExpectedNum(ValPath, ValType),
-
-  #[error("{0}: expected Array, found {1}")]
-  ExpectedArr(ValPath, ValType),
-
-  #[error("{0}: expected Obj, found {1}")]
-  ExpectedObj(ValPath, ValType),
-
-  #[error("{0}: expected Func, found {1}")]
-  ExpectedFunc(ValPath, ValType),
+  #[error("{path}: unexpected type: {actual}, want {expected}")]
+  UnexpectedType { path: ValPath, expected: ValType, actual: ValType },
 
   #[error("{0}: expected identifier")]
   IdentifierExpected(ValPath),
