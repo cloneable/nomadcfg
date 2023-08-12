@@ -1,3 +1,5 @@
+// go run . >../src/nomadapi.rs
+
 package main
 
 import (
@@ -10,7 +12,7 @@ import (
 
 	"github.com/iancoleman/strcase"
 
-	// v1.5.6: go get github.com/hashicorp/nomad/api@8af70885c02ab921dedbdf6bc406a1e886866f80
+	// v1.6.1: go get github.com/hashicorp/nomad/api@515895c7690cdc72278018dc5dc58aca41204ccc
 	"github.com/hashicorp/nomad/api"
 )
 

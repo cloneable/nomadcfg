@@ -54,6 +54,12 @@ pub struct Job {
   )]
   pub datacenters: Option<Vec<String>>,
   #[serde(
+    rename(deserialize = "node_pool", serialize = "NodePool"),
+    default,
+    skip_serializing_if = "Option::is_none"
+  )]
+  pub node_pool: Option<String>,
+  #[serde(
     rename(deserialize = "constraint", serialize = "Constraints"),
     default,
     skip_serializing_if = "Option::is_none"
@@ -681,6 +687,12 @@ pub struct ServiceCheck {
     skip_serializing_if = "Option::is_none"
   )]
   pub initial_status: Option<String>,
+  #[serde(
+    rename(deserialize = "tls_server_name", serialize = "TLSServerName"),
+    default,
+    skip_serializing_if = "Option::is_none"
+  )]
+  pub tls_server_name: Option<String>,
   #[serde(
     rename(deserialize = "tls_skip_verify", serialize = "TLSSkipVerify"),
     default,
@@ -1605,6 +1617,12 @@ pub struct Vault {
   )]
   pub env: Option<bool>,
   #[serde(
+    rename(deserialize = "disable_file", serialize = "DisableFile"),
+    default,
+    skip_serializing_if = "Option::is_none"
+  )]
+  pub disable_file: Option<bool>,
+  #[serde(
     rename(deserialize = "change_mode", serialize = "ChangeMode"),
     default,
     skip_serializing_if = "Option::is_none"
@@ -2211,6 +2229,12 @@ pub struct MultiregionRegion {
     skip_serializing_if = "Option::is_none"
   )]
   pub datacenters: Option<Vec<String>>,
+  #[serde(
+    rename(deserialize = "node_pool", serialize = "NodePool"),
+    default,
+    skip_serializing_if = "Option::is_none"
+  )]
+  pub node_pool: Option<String>,
   #[serde(
     rename(deserialize = "meta", serialize = "Meta"),
     default,

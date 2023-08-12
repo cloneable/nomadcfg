@@ -3,14 +3,14 @@ module github.com/cloneable/nomadcfg/nomadapi
 go 1.20
 
 require (
-	github.com/hashicorp/nomad/api v0.0.0-20230519182613-8af70885c02a
+	github.com/hashicorp/nomad/api v0.0.0-20230721134942-515895c7690c
 	github.com/iancoleman/strcase v0.2.0
 )
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/hashicorp/cronexpr v1.1.1 // indirect
+	github.com/hashicorp/cronexpr v1.1.2 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
