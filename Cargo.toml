@@ -13,15 +13,15 @@ exclude = [".gitignore", ".github", "nomadapi", "deny.toml", "target"]
 [dependencies]
 clap = { version = "4", features = ["derive", "env"] }
 diff = "0.1"
-indexmap = { version = "1", features = ["serde"] }
-jrsonnet-evaluator = { version = "0.5.0-pre9", features = ["exp-preserve-order"] }
-jrsonnet-parser = { version = "0.5.0-pre9" }
-jrsonnet-stdlib = { version = "0.5.0-pre9", features = ["exp-preserve-order"] }
+indexmap = { version = "2", features = ["serde"] }
+jrsonnet-evaluator = { version = "0.5.0-pre94", features = ["exp-preserve-order"] }
+jrsonnet-parser = { version = "0.5.0-pre94" }
+jrsonnet-stdlib = { version = "0.5.0-pre94", features = ["exp-preserve-order"] }
 reqwest = { version = "0.11", default-features = false, features = ["rustls-tls", "json", "rustls-pemfile", "blocking"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 serde_yaml = "0.9"
-strsim = "0.10.0"
+strsim = "0.10"
 thiserror = "1"
 toml = { version = "0.7", features = ["preserve_order"] }
 url = "2"
