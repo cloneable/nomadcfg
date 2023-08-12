@@ -81,7 +81,7 @@ mod nomadapi;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use jrsonnet_evaluator::{
   trace::{ExplainingFormat, PathResolver},
-  FileImportResolver, State, Val,
+  FileImportResolver, InitialUnderscore, State, Thunk, Val,
 };
 use jrsonnet_stdlib::ContextInitializer;
 use serde::{Deserialize, Serialize};
@@ -98,6 +98,7 @@ struct RootArgs {
 #[derive(Subcommand, Debug)]
 enum Command {
   Print(PrintArgs),
+  Eval(EvalArgs),
   Diff(DiffArgs),
 }
 
@@ -125,6 +126,17 @@ struct PrintArgs {
 
   #[command(flatten)]
   input: Input,
+}
+
+#[derive(Args, Debug)]
+struct EvalArgs {
+  #[arg(long, value_enum, rename_all = "lower", default_value_t = Format::Json)]
+  format: Format,
+
+  #[command(flatten)]
+  input: Input,
+
+  selector: Option<String>,
 }
 
 #[derive(Clone, ValueEnum, Debug)]
@@ -226,11 +238,32 @@ pub fn main() -> Result<(), Error> {
       }
       r => r,
     },
+    Command::Eval(eval_args) => match eval(&eval_args) {
+      Err(
+        Error::SerdeJrsonnet(error::Error::Evaluator(e)) | Error::Jrsonnet(e),
+      ) => {
+        use jrsonnet_evaluator::trace::TraceFormat;
+
+        let trace = Box::new(ExplainingFormat {
+          resolver: PathResolver::new_cwd_fallback(),
+          max_trace: 10,
+        });
+        let mut out = String::new();
+        trace.write_trace(&mut out, &e).expect("format error");
+        eprintln!("{out}");
+        process::exit(1);
+      }
+      Err(e) => {
+        eprintln!("Error: {e}");
+        process::exit(1);
+      }
+      r => r,
+    },
     Command::Diff(diff_args) => diff(&diff_args),
   }
 }
 
-fn evaluate(input: &Input) -> Result<Vec<Jobspec>, Error> {
+fn evaluate(input: &Input, selector: Option<&String>) -> Result<Val, Error> {
   let state = State::default();
   state.set_import_resolver(FileImportResolver::default());
 
@@ -244,9 +277,26 @@ fn evaluate(input: &Input) -> Result<Vec<Jobspec>, Error> {
   // let mut tla = GcHashMap::<IStr, IStr>::new();
   // tla.insert("foo".into(), "foo-value".into());
 
-  let val = state.import(&input.config)?;
+  let mut val = state.import(&input.config)?;
+
   // let val = apply_tla(state.clone(), &tla, val)?;
 
+  if let Some(selector) = selector {
+    val = state.evaluate_snippet_with(
+      "<selector>".to_owned(),
+      selector,
+      InitialUnderscore(Thunk::evaluated(val)),
+    )?;
+  }
+
+  Ok(val)
+}
+
+fn transform(
+  val: &Val,
+  unnested_job: bool,
+  error_on_unknown_field: bool,
+) -> Result<Vec<Jobspec>, Error> {
   // TODO: canonicalize
   // TODO: only eval requested job
   let mut jobspecs = Vec::<Jobspec>::new();
@@ -254,24 +304,22 @@ fn evaluate(input: &Input) -> Result<Vec<Jobspec>, Error> {
     Val::Arr(ref jobs) => {
       for job in jobs.iter() {
         let val: Val = job?;
-        if input.unnested_job {
+        if unnested_job {
           jobspecs.push(Jobspec {
-            job: deserializer::from_val(&val, input.error_on_unknown_field)?,
+            job: deserializer::from_val(&val, error_on_unknown_field)?,
           });
         } else {
-          jobspecs
-            .push(deserializer::from_val(&val, input.error_on_unknown_field)?);
+          jobspecs.push(deserializer::from_val(&val, error_on_unknown_field)?);
         }
       }
     }
     Val::Obj(_) => {
-      if input.unnested_job {
+      if unnested_job {
         jobspecs.push(Jobspec {
-          job: deserializer::from_val(&val, input.error_on_unknown_field)?,
+          job: deserializer::from_val(&val, error_on_unknown_field)?,
         });
       } else {
-        jobspecs
-          .push(deserializer::from_val(&val, input.error_on_unknown_field)?);
+        jobspecs.push(deserializer::from_val(&val, error_on_unknown_field)?);
       }
     }
     _ => {
@@ -283,7 +331,12 @@ fn evaluate(input: &Input) -> Result<Vec<Jobspec>, Error> {
 }
 
 fn print(args: &PrintArgs) -> Result<(), Error> {
-  let jobspecs = evaluate(&args.input)?;
+  let val = evaluate(&args.input, None)?;
+  let jobspecs = transform(
+    &val,
+    args.input.unnested_job,
+    args.input.error_on_unknown_field,
+  )?;
 
   let mut found = false;
   for spec in &jobspecs {
@@ -309,8 +362,26 @@ fn print(args: &PrintArgs) -> Result<(), Error> {
   Ok(())
 }
 
+fn eval(args: &EvalArgs) -> Result<(), Error> {
+  let val = evaluate(&args.input, args.selector.as_ref())?;
+
+  let output = match args.format {
+    Format::Json => serde_json::to_string_pretty(&val)?,
+    Format::Yaml => serde_yaml::to_string(&val)?,
+    Format::Toml => toml::to_string_pretty(&val)?,
+  };
+  println!("{output}");
+
+  Ok(())
+}
+
 fn diff(args: &DiffArgs) -> Result<(), Error> {
-  let jobspecs = evaluate(&args.input)?;
+  let val = evaluate(&args.input, None)?;
+  let jobspecs = transform(
+    &val,
+    args.input.unnested_job,
+    args.input.error_on_unknown_field,
+  )?;
 
   let local_spec = jobspecs
     .iter()
